@@ -1,4 +1,4 @@
-import { RECORD_EVERY } from '../core/config.js';
+import { RECORD_EVERY, FLAG_BLINK } from '../core/config.js';
 import { EchoTrack, STRIDE } from './EchoTrack.js';
 
 /** Records the player's state at 30 Hz plus timestamped interaction events for one cycle. */
@@ -35,7 +35,16 @@ export class EchoRecorder {
     this.events.push({ tick, type, targetId });
   }
 
-  pushFrame(tick, player) {
+  /** Mark a discontinuity (the player swapped): the frame at `tick` is flagged so replay jumps to it. */
+  markBlink(tick, player) {
+    if (!this.active) return;
+    if (tick === this.lastTick) this.frames.length -= STRIDE;
+    this.lastTick = -1;
+    this.pushFrame(tick, player, FLAG_BLINK);
+    this.recordEvent(tick, 'swap');
+  }
+
+  pushFrame(tick, player, extraFlags = 0) {
     if (tick === this.lastTick) return;
     const platform = player.platform;
     let x = player.pos.x;
@@ -48,7 +57,7 @@ export class EchoRecorder {
       y -= platform.pos.y;
       z -= platform.pos.z;
     }
-    this.frames.push(tick, x, y, z, player.yaw, player.pitch, player.flags, pIndex);
+    this.frames.push(tick, x, y, z, player.yaw, player.pitch, player.flags | extraFlags, pIndex);
     this.lastTick = tick;
   }
 

@@ -104,6 +104,32 @@ export class SceneView {
     bus.on('plate:change', ({ plate, pressed }) => {
       if (pressed) p.burst({ x: plate.pos.x, y: plate.pos.y + 0.12, z: plate.pos.z }, { count: 24, color: COLORS.green, speed: 1.6, up: 0.4, ring: true, life: 0.6, gravity: 0, size: 0.07 });
     });
+    bus.on('echo:swap', ({ from, to }) => {
+      const steps = 14;
+      for (let i = 0; i <= steps; i++) {
+        const k = i / steps;
+        const pt = { x: from.x + (to.x - from.x) * k, y: from.y + 1 + (to.y - from.y) * k, z: from.z + (to.z - from.z) * k };
+        p.burst(pt, { count: 4, color: i % 2 ? COLORS.cyan : COLORS.purple, speed: 0.6, up: 0.2, spread: 0.15, life: 0.5, gravity: 0, size: 0.09 });
+      }
+      for (const pt of [from, to]) p.burst({ x: pt.x, y: pt.y + 0.1, z: pt.z }, { count: 40, color: COLORS.cyan, speed: 2.5, up: 1, ring: true, height: 1.8, life: 0.7, gravity: -1, size: 0.08 });
+      this.shake.add(0.2);
+      this.swapFlash = 1;
+    });
+    bus.on('echo:freeze', ({ echo }) => {
+      p.burst({ x: echo.pos.x, y: echo.pos.y + 0.2, z: echo.pos.z }, { count: 50, color: 0xbfefff, speed: 2.8, up: 0.1, ring: true, height: 0.3, life: 0.8, gravity: 0, size: 0.09 });
+      p.burst({ x: echo.pos.x, y: echo.pos.y + 1.1, z: echo.pos.z }, { count: 30, color: 0xffffff, speed: 1.2, up: 0, spread: 0.5, life: 1.2, gravity: -0.3, size: 0.06 });
+    });
+    bus.on('echo:unfreeze', ({ echo }) => {
+      p.burst({ x: echo.pos.x, y: echo.pos.y + 1, z: echo.pos.z }, { count: 24, color: 0xbfefff, speed: 1.6, up: 0.4, spread: 0.4, life: 0.6, gravity: 4, size: 0.06 });
+    });
+    bus.on('echo:sacrifice', ({ pos }) => {
+      p.burst({ x: pos.x, y: pos.y + 0.3, z: pos.z }, { count: 110, color: 0xff6a2a, speed: 1.5, up: 3.5, spread: 0.5, life: 1.6, gravity: -1, size: 0.1 });
+      p.burst({ x: pos.x, y: pos.y + 1, z: pos.z }, { count: 50, color: COLORS.red, speed: 3, up: 1, spread: 0.3, life: 0.9, gravity: 2, size: 0.08 });
+      this.shake.add(0.25);
+    });
+    bus.on('echo:blink', ({ pos }) => {
+      p.burst({ x: pos.x, y: pos.y + 1, z: pos.z }, { count: 30, color: COLORS.cyan, speed: 1.8, up: 0.3, spread: 0.3, life: 0.5, gravity: 0, size: 0.08 });
+    });
     bus.on('ending:start', () => {
       this.shake.add(0.6);
       this.endingFx.start();
@@ -176,6 +202,12 @@ export class SceneView {
     const yaw = look.yaw;
     cam.position.set(x + Math.cos(yaw) * bobX + s.x, y + PLAYER.eye + bobY - this.landDip + s.y, z - Math.sin(yaw) * bobX + s.z);
     cam.rotation.set(look.pitch + s.pitch, yaw + s.yaw, s.roll + bobX * 0.3);
+    this.swapFlash = Math.max(0, (this.swapFlash ?? 0) - dt * 3);
+    const fov = 75 + this.swapFlash * 12;
+    if (Math.abs(cam.fov - fov) > 0.01) {
+      cam.fov = fov;
+      cam.updateProjectionMatrix();
+    }
     if (this.sim.state === 'dying') cam.rotation.z += 0.2;
   }
 

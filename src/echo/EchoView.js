@@ -69,6 +69,12 @@ export class EchoView {
     this.group.add(this.badge);
 
     this.walkPhase = 0;
+    this.localTime = Math.random() * 10;
+    this.frozenK = 0;
+    this.flash = 0;
+    this.seenSwap = echo.lastSwapTick;
+    this.outlineBase = this.outline.uniforms.uColor.value.clone();
+    this.outlineIce = new THREE.Color(1.4, 1.9, 2.2);
     this.yaw = echo.yaw;
     this.lastPos = new THREE.Vector3(echo.pos.x, echo.pos.y, echo.pos.z);
   }
@@ -87,14 +93,23 @@ export class EchoView {
 
     const speed = Math.hypot(x - this.lastPos.x, z - this.lastPos.z) / Math.max(dt, 1e-4);
     this.lastPos.set(x, y, z);
-    const walking = (e.flags & FLAG_WALKING) !== 0 && e.state !== 'holding' && speed > 0.3;
+    const frozen = e.isFrozen;
+    this.frozenK += ((frozen ? 1 : 0) - this.frozenK) * Math.min(1, dt * 10);
+    if (!frozen) this.localTime += dt;
+    if (e.lastSwapTick !== this.seenSwap) {
+      this.seenSwap = e.lastSwapTick;
+      this.flash = 1;
+      this.lastPos.set(x, y, z);
+    }
+    this.flash = Math.max(0, this.flash - dt * 2.5);
+    const walking = !frozen && (e.flags & FLAG_WALKING) !== 0 && e.state !== 'holding' && speed > 0.3;
     this.walkPhase += dt * (walking ? Math.min(14, 4 + speed * 1.6) : 0);
     const swing = walking ? Math.sin(this.walkPhase) * 0.6 : 0;
     this.legs[0].rotation.x = swing;
     this.legs[1].rotation.x = -swing;
     this.arms[0].rotation.x = -swing * 0.8;
     this.arms[1].rotation.x = swing * 0.8;
-    this.body.position.y = walking ? Math.abs(Math.cos(this.walkPhase)) * 0.04 : Math.sin(time * 1.8 + e.serial) * 0.015;
+    if (!frozen) this.body.position.y = walking ? Math.abs(Math.cos(this.walkPhase)) * 0.04 : Math.sin(time * 1.8 + e.serial) * 0.015;
 
     let dissolve = e.spawnProgress;
     let glitch = 0;
@@ -108,10 +123,13 @@ export class EchoView {
       dissolve *= THREE.MathUtils.smoothstep(near, 0.35, 1.3);
     }
     const u = this.mat.uniforms;
-    u.uTime.value = time;
+    u.uTime.value = this.localTime;
     u.uDissolve.value = dissolve * 1.02;
-    u.uGlitch.value = glitch;
-    this.outline.uniforms.uTime.value = time;
+    u.uGlitch.value = glitch * (1 - this.frozenK);
+    u.uFrozen.value = this.frozenK;
+    u.uFlash.value = this.flash;
+    this.outline.uniforms.uTime.value = this.localTime;
+    this.outline.uniforms.uColor.value.copy(this.outlineBase).lerp(this.outlineIce, this.frozenK);
     this.outline.uniforms.uOpacity.value = 0.55 * dissolve * (0.85 + 0.15 * Math.sin(time * 17 + e.serial));
     this.visorMat.opacity = dissolve;
     this.ringMat.opacity = dissolve * (0.6 + 0.4 * Math.sin(time * 4));

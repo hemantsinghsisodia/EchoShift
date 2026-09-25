@@ -33,6 +33,11 @@ export class UI {
       flash: $('flash'),
       fade: $('fade'),
       debug: $('debug-overlay'),
+      abilities: $('abilities'),
+      ab_swap: $('ab-swap'),
+      ab_freeze: $('ab-freeze'),
+      paradox: $('paradox'),
+      paradoxValue: $('paradox-value'),
     };
     this.cache = {};
     this.settingsReturn = 'menu';
@@ -135,11 +140,60 @@ export class UI {
       this.el.pips.innerHTML = Array.from({ length: max }, (_, i) => `<i class="${i < count ? 'on' : ''}"></i>`).join('');
     }
 
-    const t = sim.state === 'playing' || sim.state === 'ending' ? sim.target : null;
-    const label = t ? (t.type === 'node' ? `CHARGE ${t.label}` : t.type === 'button' ? 'PRESS BUTTON' : t.mode === 'toggle' ? 'TOGGLE SWITCH' : 'PRESS SWITCH') : '';
-    this.set('prompt', this.el.promptText, label);
-    this.set('promptVis', this.el.prompt, t ? '' : 'hidden', 'className');
-    this.set('cross', this.el.crosshair, t ? 'target' : '', 'className');
+    const live = sim.state === 'playing' || sim.state === 'ending';
+    const t = live ? sim.target : null;
+    const echo = live && !t ? sim.echoTarget : null;
+    let html = '';
+    if (t) {
+      const label = t.type === 'node' ? `CHARGE ${t.label}` : t.type === 'button' ? 'PRESS BUTTON' : t.mode === 'toggle' ? 'TOGGLE SWITCH' : 'PRESS SWITCH';
+      html = `<b>E</b>${label}`;
+    } else if (echo) {
+      const parts = [];
+      if (sim.abilities.allowed('swap')) parts.push(`<b>Q</b>SWAP ECHO ${echo.serial}`);
+      if (sim.abilities.allowed('freeze')) parts.push(`<b>F</b>FREEZE`);
+      html = parts.join('<span class="sep">|</span>');
+    }
+    this.set('prompt', this.el.promptText, html, 'innerHTML');
+    this.set('promptVis', this.el.prompt, html ? (echo ? 'echo' : '') : 'hidden', 'className');
+    this.set('cross', this.el.crosshair, t || echo ? 'target' : '', 'className');
+
+    this.updateAbilities(sim);
+    this.updateParadox(sim.paradox);
+  }
+
+  updateAbilities(sim) {
+    const ab = sim.abilities;
+    const any = ab.anyAllowed;
+    this.set('abVis', this.el.abilities, any ? 'abilities' : 'abilities hidden', 'className');
+    if (!any) return;
+    for (const name of ['swap', 'freeze']) {
+      const el = this.el[`ab_${name}`];
+      const allowed = ab.allowed(name);
+      const cd = ab.cooldown(name);
+      this.set(`abShow_${name}`, el.style, allowed ? '' : 'none', 'display');
+      this.set(`abCool_${name}`, el, `ability${cd > 0 ? ' cooling' : ''}`, 'className');
+      this.set(`abBar_${name}`, el.querySelector('.cd').style, `scaleX(${(1 - cd).toFixed(3)})`, 'transform');
+    }
+  }
+
+  updateParadox(paradox) {
+    this.set('pxVis', this.el.paradox, paradox.visible ? 'paradox' : 'paradox hidden', 'className');
+    this.set('pxVal', this.el.paradoxValue, `${paradox.percent}%`);
+  }
+
+  bumpParadox() {
+    const el = this.el.paradox;
+    el.classList.remove('bump');
+    void el.offsetWidth;
+    el.classList.add('bump');
+  }
+
+  flashAbility(name) {
+    const el = this.el[`ab_${name}`];
+    el.classList.remove('used');
+    void el.offsetWidth;
+    el.classList.add('used');
+    this.cache[`abCool_${name}`] = null;
   }
 
   pulseCycle() {

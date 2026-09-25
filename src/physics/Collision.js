@@ -69,6 +69,27 @@ export function resolveHorizontal(pos, radius, height, boxes, stepHeight) {
   return collided;
 }
 
+/** Slab test: does the segment p0 -> p1 pass through the box interior? */
+export function segmentHitsBox(p0, p1, box) {
+  let tMin = 0;
+  let tMax = 1;
+  const a = [p0.x, p0.y, p0.z];
+  const d = [p1.x - p0.x, p1.y - p0.y, p1.z - p0.z];
+  for (let i = 0; i < 3; i++) {
+    if (Math.abs(d[i]) < 1e-9) {
+      if (a[i] <= box.min[i] || a[i] >= box.max[i]) return false;
+      continue;
+    }
+    let t0 = (box.min[i] - a[i]) / d[i];
+    let t1 = (box.max[i] - a[i]) / d[i];
+    if (t0 > t1) [t0, t1] = [t1, t0];
+    tMin = Math.max(tMin, t0);
+    tMax = Math.min(tMax, t1);
+    if (tMin >= tMax) return false;
+  }
+  return true;
+}
+
 /** Highest box top under the circle that is not above maxTop. */
 export function groundProbe(pos, radius, boxes, maxTop) {
   let top = -Infinity;

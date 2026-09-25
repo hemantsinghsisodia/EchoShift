@@ -223,11 +223,29 @@ export class Game {
       ui.pulseCycle();
     });
     bus.on('echo:collapse', ({ echo, reason }) => {
-      if (reason === 'cleared') return;
+      if (reason === 'cleared' || reason === 'sacrifice') return;
       a.play('echoCollapse', { pos: echo.pos });
       if (reason === 'paradox') ui.banner(`PARADOX // ECHO ${echo.serial} COLLAPSED`, 'red');
     });
     bus.on('node:activate', ({ node }) => a.play('nodeActivate', { pos: node.pos }));
+    bus.on('echo:swap', () => {
+      a.play('swap');
+      ui.flash('rgba(95, 227, 255, 0.55)', 0.35);
+      ui.flashAbility('swap');
+    });
+    bus.on('echo:freeze', ({ pos }) => {
+      a.play('freeze', { pos });
+      ui.flashAbility('freeze');
+    });
+    bus.on('echo:unfreeze', ({ pos }) => a.play('unfreeze', { pos }));
+    bus.on('echo:blink', ({ pos }) => a.play('blink', { pos }));
+    bus.on('echo:sacrifice', ({ pos }) => a.play('sacrifice', { pos }));
+    bus.on('furnace:lit', ({ pos }) => a.play('furnaceLit', { pos }));
+    bus.on('ability:blocked', ({ ability, reason }) => {
+      a.play('blocked');
+      ui.banner(`${ability.toUpperCase()} // ${reason}`, 'red');
+    });
+    bus.on('paradox:change', () => ui.bumpParadox());
     bus.on('room:complete', ({ final }) => {
       a.play('complete');
       if (!final) {

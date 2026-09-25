@@ -1,24 +1,31 @@
-import { wallX } from './helpers.js';
+import { wallX, wallZ } from './helpers.js';
 
-// Timed gate: the button is too far from the gate to sprint through in time.
+// Teaches Echo Freeze: the plate sits in a pulsing laser field, so the Echo only crosses it briefly.
 export default {
   id: 4,
   name: 'TIMED GATES',
-  objective: 'Get through both gates and charge the node.',
-  hint: 'The gate button is too far from the gate. Let your Echo press it while you wait at the gate.',
+  objective: 'Hold the plate long enough to clear all three gates.',
+  hint: 'Press F while aiming at an Echo to freeze it for 5 seconds. A frozen Echo keeps holding what it stands on.',
   w: 18,
   d: 22,
   h: 5,
   entranceX: 0,
   exitX: 6,
-  maxEchoes: 2,
+  maxEchoes: 1,
+  abilities: ['swap', 'freeze'],
   accent: 'purple',
-  walls: [...wallX(-5, -9, 9, [[6, 2.4]]), ...wallX(-8, -9, 9, [[6, 2.4]])],
+  walls: [
+    ...wallX(-2, -9, 9, [[6, 2.4]]),
+    ...wallX(-5, -9, 9, [[6, 2.4]]),
+    ...wallX(-8, -9, 9, [[6, 2.4]]),
+  ],
+  glass: [...wallZ(0, 0.5, 6, [], 0, 3.2, 0.12)],
   objects: [
-    { type: 'button', id: 'tb1', pos: [-8.2, 0, 9.8], duration: 2.2 },
-    { type: 'plate', id: 'p1', pos: [-7, 0, 6.5] },
-    { type: 'door', id: 'td1', pos: [6, 0, -5], opensWhen: 'tb1', openTime: 0.25, closeTime: 0.3 },
-    { type: 'door', id: 'd2', pos: [6, 0, -8], opensWhen: 'p1', openTime: 0.4, closeTime: 0.3 },
+    { type: 'plate', id: 'p1', pos: [-3, 0, 3] },
+    { type: 'laser', id: 'field', min: [-4.4, 0, 1.6], max: [-1.6, 2.2, 4.4], pulse: { period: 3, on: 1.5 } },
+    { type: 'door', id: 'g1', pos: [6, 0, -2], opensWhen: 'p1', openTime: 0.4, closeTime: 0.25 },
+    { type: 'door', id: 'g2', pos: [6, 0, -5], opensWhen: 'p1', openTime: 0.4, closeTime: 0.25 },
+    { type: 'door', id: 'g3', pos: [6, 0, -8], opensWhen: 'p1', openTime: 0.4, closeTime: 0.25 },
     { type: 'node', id: 'core', pos: [2, 0, -10] },
   ],
 };

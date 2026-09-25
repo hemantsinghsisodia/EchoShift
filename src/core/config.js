@@ -37,6 +37,22 @@ export const CORRIDOR_LENGTH = 4;
 export const DOOR_WIDTH = 2.4;
 export const WALL_THICKNESS = 0.4;
 
+/** Frame flag marking a discontinuity (a swap): replay jumps instead of interpolating. */
+export const FLAG_BLINK = 16;
+
+export const ABILITIES = {
+  swapRange: 10,
+  swapCooldown: 3,
+  freezeRange: 12,
+  freezeDuration: 5,
+  freezeCooldown: 8,
+  targetAngle: 0.3,
+  eyeHeight: 1.5,
+  targetHeight: 1.1,
+};
+
+export const PARADOX_COST = { swap: 4, freeze: 3, sacrifice: 5, collapse: 6 };
+
 export const COLORS = {
   blue: 0x2a6cff,
   green: 0x27ff8a,

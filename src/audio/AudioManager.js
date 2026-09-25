@@ -228,6 +228,42 @@ const SOUNDS = {
     [261.6, 329.6, 392, 523.3, 659.3, 784].forEach((f, i) => tone(ctx, o, t + i * 0.12, { type: 'triangle', freq: f, attack: 0.05, hold: 0.8, release: 2.5, peak: 0.07 }));
     noise(ctx, o, a.noiseBuf, t, { filter: 'highpass', freq: 3000, freqEnd: 9000, attack: 1, release: 2, peak: 0.05 });
   },
+  swap(a, ctx, t) {
+    const o = a.out(null, 1);
+    fm(ctx, o, t, { carrier: 880, carrierEnd: 220, ratio: 1.41, index: 600, attack: 0.005, hold: 0.05, release: 0.35, peak: 0.12 });
+    fm(ctx, o, t + 0.12, { carrier: 220, carrierEnd: 990, ratio: 2.01, index: 300, attack: 0.005, hold: 0.05, release: 0.4, peak: 0.1 });
+    noise(ctx, o, a.noiseBuf, t, { filter: 'bandpass', freq: 600, freqEnd: 5000, q: 3, attack: 0.01, release: 0.35, peak: 0.14 });
+  },
+  freeze(a, ctx, t, { pos }) {
+    const o = a.out(pos, 1.2);
+    [1568, 2093, 2637, 3136].forEach((f, i) => tone(ctx, o, t + i * 0.03, { type: 'sine', freq: f, attack: 0.002, hold: 0.05, release: 0.9, peak: 0.05 }));
+    noise(ctx, o, a.noiseBuf, t, { filter: 'highpass', freq: 5000, freqEnd: 9000, attack: 0.005, release: 0.4, peak: 0.1 });
+    tone(ctx, o, t, { type: 'triangle', freq: 330, freqEnd: 110, release: 0.3, peak: 0.12 });
+  },
+  unfreeze(a, ctx, t, { pos }) {
+    const o = a.out(pos, 1);
+    noise(ctx, o, a.noiseBuf, t, { filter: 'bandpass', freq: 3000, freqEnd: 800, q: 2, release: 0.25, peak: 0.12 });
+    tone(ctx, o, t, { type: 'sine', freq: 660, freqEnd: 990, release: 0.2, peak: 0.06 });
+  },
+  blocked(a, ctx, t) {
+    const o = a.out(null, 0.8);
+    tone(ctx, o, t, { type: 'square', freq: 140, release: 0.08, peak: 0.08 });
+    tone(ctx, o, t + 0.1, { type: 'square', freq: 110, release: 0.12, peak: 0.08 });
+  },
+  sacrifice(a, ctx, t, { pos }) {
+    const o = a.out(pos, 1.3);
+    noise(ctx, o, a.noiseBuf, t, { filter: 'lowpass', freq: 400, freqEnd: 3000, attack: 0.05, hold: 0.4, release: 0.9, peak: 0.3, sweep: 0.6 });
+    tone(ctx, a.dist, t, { type: 'sawtooth', freq: 220, freqEnd: 55, attack: 0.02, hold: 0.2, release: 0.8, peak: 0.25 });
+    fm(ctx, o, t + 0.1, { carrier: 440, carrierEnd: 110, ratio: 3.3, index: 900, attack: 0.01, hold: 0.1, release: 0.8, peak: 0.08 });
+  },
+  furnaceLit(a, ctx, t, { pos }) {
+    const o = a.out(pos, 1);
+    [196, 247, 294, 392].forEach((f, i) => tone(ctx, o, t + 0.3 + i * 0.06, { type: 'triangle', freq: f, attack: 0.02, hold: 0.2, release: 1, peak: 0.08 }));
+  },
+  blink(a, ctx, t, { pos }) {
+    const o = a.out(pos, 0.8);
+    fm(ctx, o, t, { carrier: 660, carrierEnd: 330, ratio: 1.41, index: 300, attack: 0.005, release: 0.25, peak: 0.07 });
+  },
   uiHover(a, ctx, t) {
     const o = a.out(null, 0.5);
     tone(ctx, o, t, { type: 'sine', freq: 1500, release: 0.03, peak: 0.05 });

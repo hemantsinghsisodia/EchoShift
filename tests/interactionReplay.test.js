@@ -12,13 +12,13 @@ function drive(sim, steps, ticks) {
 describe('echo interaction replay (real simulation)', () => {
   it('an echo repeats a switch press at the same cycle tick', () => {
     const sim = new Simulation();
-    sim.roomManager.begin(2);
+    sim.roomManager.begin(7);
     const presses = [];
     sim.bus.on('switch:press', ({ obj, by }) => presses.push({ id: obj.id, by, tick: sim.room.clock }));
-    drive(sim, [{ goto: [-7.9, 1] }, { waitRoom: 5 }, { interact: 'swA' }], CYCLE_TICKS * 2);
+    drive(sim, [{ goto: [-15, -4.5] }, { waitRoom: 5 }, { interact: 'sw1' }], CYCLE_TICKS * 2);
     expect(presses).toEqual([
-      { id: 'swA', by: 'player', tick: 301 },
-      { id: 'swA', by: 'echo', tick: 301 + CYCLE_TICKS },
+      { id: 'sw1', by: 'player', tick: 301 },
+      { id: 'sw1', by: 'echo', tick: 301 + CYCLE_TICKS },
     ]);
   });
 
@@ -32,20 +32,20 @@ describe('echo interaction replay (real simulation)', () => {
     expect(s2.on).toBe(false);
 
     const sim2 = new Simulation();
-    sim2.roomManager.begin(3);
+    sim2.roomManager.begin(6);
     const tb1 = sim2.room.byId.tb1;
-    drive(sim2, [{ goto: [-7.4, 8.4] }, { waitRoom: 12 }, { interact: 'tb1' }], CYCLE_TICKS + 12 * 60 + 5);
+    drive(sim2, [{ goto: [7.5, -1.8] }, { waitRoom: 12 }, { interact: 'tb1' }], CYCLE_TICKS + 12 * 60 + 5);
     expect(tb1.signal).toBe(true);
     expect(tb1.lastPressBy).toBe('echo');
   });
 
   it('an echo out of range of the recorded target does nothing', () => {
     const sim = new Simulation();
-    sim.roomManager.begin(2);
-    const echoLike = { pos: { ...sim.room.byId.swB.pos }, kind: 'echo' };
+    sim.roomManager.begin(7);
+    const echoLike = { pos: { ...sim.room.byId.sw2.pos }, kind: 'echo' };
     echoLike.pos.x -= 8;
-    sim.replayEvent(echoLike, { type: 'interact', targetId: 'swB' });
-    expect(sim.room.byId.swB.lastPressTick).toBe(-Infinity);
+    sim.replayEvent(echoLike, { type: 'interact', targetId: 'sw2' });
+    expect(sim.room.byId.sw2.lastPressTick).toBe(-Infinity);
   });
 
   it('an echo holds a plate after replaying', () => {

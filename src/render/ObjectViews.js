@@ -7,6 +7,7 @@ import { Door } from '../objects/Door.js';
 import { MovingPlatform } from '../objects/MovingPlatform.js';
 import { Laser } from '../objects/Laser.js';
 import { EnergyNode } from '../objects/EnergyNode.js';
+import { EchoFurnace } from '../objects/EchoFurnace.js';
 import { createConeMaterial, createLightCone } from './LightCones.js';
 
 const mesh = (geo, mat, sx = 1, sy = 1, sz = 1) => {
@@ -292,10 +293,60 @@ class LaserView {
   }
 
   update(time) {
-    const on = this.obj.active;
+    const o = this.obj;
+    const on = o.active;
     for (const b of this.beams) b.visible = on;
     if (this.mat.uniforms) this.mat.uniforms.uTime.value = time;
-    for (const s of this.emitterStrips) s.material = on ? this.mats.red : this.mats.blueDim;
+    const warning = o.pulse && !on && o.pulseRemaining() < 0.45 && Math.sin(time * 40) > 0;
+    for (const s of this.emitterStrips) s.material = on || warning ? this.mats.red : this.mats.blueDim;
+  }
+}
+
+/** Echo Furnace: a hungry red vortex (danger to Echoes) that turns green once fed. */
+class FurnaceView {
+  constructor(obj, { mats, geos, coneRed, coneGreen }) {
+    this.obj = obj;
+    this.mats = mats;
+    const [w, d] = obj.size;
+    this.group = new THREE.Group();
+    this.group.position.set(obj.pos.x, obj.pos.y, obj.pos.z);
+    const base = mesh(geos.box, mats.metalDark, w + 0.3, 0.06, d + 0.3);
+    base.position.y = 0.03;
+    this.ring = mesh(geos.squareRing, mats.red, w, 1, d);
+    this.ring.position.y = 0.07;
+    this.grate = mesh(geos.squareRing, mats.redDim, w * 0.6, 1, d * 0.6);
+    this.grate.position.y = 0.075;
+    this.core = mesh(geos.icosa, mats.red, 0.45, 0.45, 0.45);
+    this.core.position.y = 1.1;
+    this.flames = [];
+    for (let i = 0; i < 4; i++) {
+      const f = mesh(geos.box, mats.red, 0.05, 1.6, 0.05);
+      this.flames.push(f);
+      this.group.add(f);
+    }
+    this.cone = createLightCone(geos, coneRed, { x: 0, y: 3.2, z: 0 }, 3.1, Math.min(w, d) * 0.55);
+    this.coneLit = createLightCone(geos, coneGreen, { x: 0, y: 3.2, z: 0 }, 3.1, Math.min(w, d) * 0.55);
+    this.group.add(base, this.ring, this.grate, this.core, this.cone, this.coneLit);
+  }
+
+  update(time) {
+    const lit = this.obj.lit;
+    const mat = lit ? this.mats.green : this.mats.red;
+    this.ring.material = mat;
+    this.core.material = mat;
+    this.grate.material = lit ? this.mats.wireOn : this.mats.redDim;
+    const speed = lit ? 0.6 : 2.4;
+    this.core.rotation.set(time * speed, time * speed * 1.3, 0);
+    this.core.position.y = 1.1 + Math.sin(time * 3) * 0.08;
+    const r = Math.min(this.obj.size[0], this.obj.size[1]) * 0.32;
+    this.flames.forEach((f, i) => {
+      const a = time * speed + (i / this.flames.length) * Math.PI * 2;
+      f.position.set(Math.cos(a) * r, 0.8 + Math.sin(time * 5 + i) * 0.1, Math.sin(a) * r);
+      f.material = mat;
+      f.scale.y = lit ? 0.6 : 1.6 + Math.sin(time * 7 + i * 2) * 0.3;
+    });
+    this.cone.visible = !lit;
+    this.coneLit.visible = lit;
   }
 }
 
@@ -392,6 +443,7 @@ export function createObjectView(obj, ctx) {
   if (obj instanceof MovingPlatform) return new PlatformView(obj, ctx);
   if (obj instanceof Laser) return new LaserView(obj, ctx);
   if (obj instanceof EnergyNode) return new NodeView(obj, ctx);
+  if (obj instanceof EchoFurnace) return new FurnaceView(obj, ctx);
   return null;
 }
 
@@ -400,5 +452,9 @@ export function createWireView(room, ctx) {
 }
 
 export function createNodeConeMaterials() {
-  return { coneWhite: createConeMaterial(COLORS.white, 0.16), coneGreen: createConeMaterial(COLORS.green, 0.07) };
+  return {
+    coneWhite: createConeMaterial(COLORS.white, 0.16),
+    coneGreen: createConeMaterial(COLORS.green, 0.07),
+    coneRed: createConeMaterial(COLORS.red, 0.14),
+  };
 }

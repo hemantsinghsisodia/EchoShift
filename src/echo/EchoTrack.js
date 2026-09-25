@@ -1,4 +1,5 @@
 import { lerp, lerpAngle } from '../math/vec.js';
+import { FLAG_BLINK } from '../core/config.js';
 
 export const STRIDE = 8;
 export const F_TICK = 0;
@@ -63,6 +64,7 @@ export class EchoTrack {
     if (n === 1 || t <= f[a + F_TICK]) return this.copyFrame(i, platforms, out);
     if (t >= this.lastTick) return this.copyFrame(n - 1, platforms, out);
     const b = a + STRIDE;
+    if (f[b + F_FLAGS] & FLAG_BLINK) return this.copyFrame(i, platforms, out);
     const ta = f[a + F_TICK];
     const tb = f[b + F_TICK];
     const u = tb > ta ? Math.min(1, Math.max(0, (t - ta) / (tb - ta))) : 0;

@@ -6,6 +6,7 @@ export const FLAG_GROUNDED = 1;
 export const FLAG_WALKING = 2;
 export const FLAG_SPRINTING = 4;
 export const FLAG_JUMPING = 8;
+export { FLAG_BLINK } from '../core/config.js';
 
 /** First-person character controller. Pure simulation; no rendering. */
 export class Player {

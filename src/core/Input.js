@@ -48,6 +48,8 @@ export class Input {
     this.keys.add(e.code);
     if (e.code === 'Space') this.jumpAt = performance.now();
     if (e.code === 'KeyE') this.interactQueued = true;
+    if (e.code === 'KeyQ') this.swapQueued = true;
+    if (e.code === 'KeyF') this.freezeQueued = true;
     if (e.code === 'KeyR') this.handlers.restart?.();
   }
 
@@ -69,7 +71,11 @@ export class Input {
     const jump = performance.now() - this.jumpAt < JUMP_BUFFER_MS;
     if (jump) this.jumpAt = -Infinity;
     const interact = this.interactQueued;
+    const swap = !!this.swapQueued;
+    const freeze = !!this.freezeQueued;
     this.interactQueued = false;
+    this.swapQueued = false;
+    this.freezeQueued = false;
     return {
       forward: k.has('KeyW') || k.has('ArrowUp'),
       back: k.has('KeyS') || k.has('ArrowDown'),
@@ -78,6 +84,8 @@ export class Input {
       sprint: k.has('ShiftLeft') || k.has('ShiftRight'),
       jump,
       interact,
+      swap,
+      freeze,
       yaw: this.yaw,
       pitch: this.pitch,
     };
@@ -85,5 +93,5 @@ export class Input {
 }
 
 export function idleInput(yaw = 0, pitch = 0) {
-  return { forward: false, back: false, left: false, right: false, sprint: false, jump: false, interact: false, yaw, pitch };
+  return { forward: false, back: false, left: false, right: false, sprint: false, jump: false, interact: false, swap: false, freeze: false, yaw, pitch };
 }

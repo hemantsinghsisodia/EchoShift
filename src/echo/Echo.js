@@ -29,6 +29,9 @@ export class Echo {
     this.dead = false;
     this.overlapTicks = 0;
     this.strideAcc = 0;
+    this.offset = v3();
+    this.frozenTicks = 0;
+    this.lastSwapTick = -Infinity;
     this.sampleOut = { x: 0, y: 0, z: 0, yaw: 0, pitch: 0, flags: 0 };
     this.applySample(0, platforms);
     copy3(this.prevPos, this.pos);
@@ -58,11 +61,32 @@ export class Echo {
     return Math.min(1, this.collapseAge / ECHO_COLLAPSE_TICKS);
   }
 
+  get isFrozen() {
+    return this.frozenTicks > 0 && this.isActivator;
+  }
+
+  /** Echo Swap: the echo jumps to pos and its entire remaining path shifts by the same vector. */
+  swapTo(pos) {
+    this.offset.x += pos.x - this.pos.x;
+    this.offset.y += pos.y - this.pos.y;
+    this.offset.z += pos.z - this.pos.z;
+    this.pos.x = pos.x;
+    this.pos.y = pos.y;
+    this.pos.z = pos.z;
+    copy3(this.prevPos, this.pos);
+    this.lastSwapTick = this.age;
+  }
+
+  /** Echo Freeze: stop replaying (and firing events) for `ticks`; everything after is delayed. */
+  freeze(ticks) {
+    this.frozenTicks = ticks;
+  }
+
   applySample(t, platforms) {
     const s = this.track.sample(t, this.cursor, platforms, this.sampleOut);
-    this.pos.x = s.x;
-    this.pos.y = s.y;
-    this.pos.z = s.z;
+    this.pos.x = s.x + this.offset.x;
+    this.pos.y = s.y + this.offset.y;
+    this.pos.z = s.z + this.offset.z;
     this.yaw = s.yaw;
     this.pitch = s.pitch;
     this.flags = s.flags;
@@ -88,6 +112,12 @@ export class Echo {
       return;
     }
     const last = this.track.lastTick;
+    if (this.frozenTicks > 0) {
+      this.frozenTicks--;
+      this.applySample(Math.min(this.replayTick, last), ctx.platforms);
+      if (this.frozenTicks === 0) ctx.onUnfreeze?.(this);
+      return;
+    }
     if (this.state !== 'holding') {
       this.replayTick++;
       if (this.state === 'spawning' && this.age >= ECHO_SPAWN_TICKS) this.state = 'replaying';

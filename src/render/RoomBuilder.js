@@ -112,6 +112,7 @@ export function buildLabGeometry(sim, mats, geos) {
   const ceilings = new InstanceBatch();
   const neon = new InstanceBatch();
   const fixtures = new InstanceBatch();
+  const glass = new InstanceBatch();
   const roomInfo = [];
   const pitMat = pitMaterial();
   const coneMats = {};
@@ -125,6 +126,16 @@ export function buildLabGeometry(sim, mats, geos) {
 
     for (const b of room.geometry.floors) floors.addBox(b);
     for (const b of room.geometry.walls) walls.addBox(b);
+    for (const b of room.geometry.glass) {
+      glass.addBox(b);
+      const alongX = b.max[0] - b.min[0] >= b.max[2] - b.min[2];
+      const cx = (b.min[0] + b.max[0]) / 2;
+      const cz = (b.min[2] + b.max[2]) / 2;
+      for (const y of [b.min[1] + 0.02, b.max[1] - 0.02]) {
+        if (alongX) neon.add(b.min[0], y - 0.015, cz - 0.05, b.max[0], y + 0.015, cz + 0.05, COLORS.cyan, 0.9);
+        else neon.add(cx - 0.05, y - 0.015, b.min[2], cx + 0.05, y + 0.015, b.max[2], COLORS.cyan, 0.9);
+      }
+    }
     for (const b of room.geometry.blocks) {
       blocks.addBox(b);
       const t = 0.05;
@@ -228,6 +239,10 @@ export function buildLabGeometry(sim, mats, geos) {
     neon: neon.build(geos.box, mats.neon),
     fixtures: fixtures.build(geos.box, mats.metalDark),
   };
+  if (glass.items.length) {
+    meshes.glass = glass.build(geos.box, mats.glass);
+    meshes.glass.renderOrder = 4;
+  }
   for (const m of Object.values(meshes)) group.add(m);
   return { group, roomInfo, meshes, pitMat, coneMats };
 }

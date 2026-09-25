@@ -64,6 +64,15 @@ export function createMaterials() {
     metal: new THREE.MeshStandardMaterial({ color: 0x3b4256, metalness: 0.9, roughness: 0.3, envMapIntensity: 1.0 }),
     metalDark: new THREE.MeshStandardMaterial({ color: 0x151923, metalness: 0.8, roughness: 0.45, envMapIntensity: 0.7 }),
     pitFloor: new THREE.MeshBasicMaterial({ color: 0x050208 }),
+    glass: new THREE.MeshStandardMaterial({
+      color: 0x9fd8ff,
+      metalness: 0.1,
+      roughness: 0.05,
+      transparent: true,
+      opacity: 0.14,
+      depthWrite: false,
+      envMapIntensity: 1.5,
+    }),
     neon: new THREE.MeshBasicMaterial({ color: 0xffffff }),
 
     blue: glow(COLORS.blue, 2.0),

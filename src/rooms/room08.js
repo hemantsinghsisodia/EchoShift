@@ -13,6 +13,7 @@ export default {
   entranceX: 0,
   exitX: -11,
   maxEchoes: 4,
+  abilities: ['swap', 'freeze'],
   exitDelay: 3.5,
   final: true,
   accent: 'purple',

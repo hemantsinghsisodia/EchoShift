@@ -8,6 +8,7 @@ import { Door } from '../objects/Door.js';
 import { MovingPlatform } from '../objects/MovingPlatform.js';
 import { Laser } from '../objects/Laser.js';
 import { EnergyNode } from '../objects/EnergyNode.js';
+import { EchoFurnace } from '../objects/EchoFurnace.js';
 import { wallX, wallZ } from '../rooms/helpers.js';
 import { DOOR_WIDTH } from '../core/config.js';
 
@@ -19,6 +20,7 @@ const FACTORIES = {
   platform: MovingPlatform,
   laser: Laser,
   node: EnergyNode,
+  furnace: EchoFurnace,
 };
 
 /**
@@ -45,9 +47,10 @@ export class Room {
       maxZ: origin.z + this.d / 2,
     };
 
-    this.geometry = { floors: [], walls: [], blocks: [], pits: [] };
+    this.abilities = cfg.abilities ?? [];
+    this.geometry = { floors: [], walls: [], blocks: [], pits: [], glass: [] };
     this.buildGeometry();
-    this.staticBoxes = [...this.geometry.floors, ...this.geometry.walls, ...this.geometry.blocks];
+    this.staticBoxes = [...this.geometry.floors, ...this.geometry.walls, ...this.geometry.blocks, ...this.geometry.glass];
 
     this.objects = [];
     this.byId = {};
@@ -107,6 +110,11 @@ export class Room {
       this.geometry.walls.push(box);
     }
     for (const b of cfg.blocks ?? []) this.geometry.blocks.push(this.boxToWorld(b));
+    for (const b of cfg.glass ?? []) {
+      const box = this.boxToWorld(b);
+      box.glass = true;
+      this.geometry.glass.push(box);
+    }
   }
 
   buildObjects() {

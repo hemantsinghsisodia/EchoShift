@@ -3,6 +3,7 @@ import { Simulation } from '../src/core/Simulation.js';
 import { runRoomSolution } from '../src/debug/runSolution.js';
 import { Autopilot } from '../src/debug/Autopilot.js';
 import { CYCLE_TICKS } from '../src/core/config.js';
+import { SOLUTIONS } from '../src/debug/solutions.js';
 
 describe('scripted room solutions (headless, real simulation)', () => {
   for (let i = 0; i < 8; i++) {
@@ -56,23 +57,51 @@ describe('rooms cannot be solved alone before the first echo', () => {
     expect(sim.player.pos.z).toBeGreaterThan(sim.rooms[0].origin.z - 1);
   });
 
-  it('room 3: one person cannot press both switches within the window', () => {
-    const sim = soloAttempt(2, [
-      { goto: [-7.9, 1] },
-      { interact: 'swA' },
-      { goto: [7.9, 1] },
-      { interact: 'swB' },
-      { wait: 1 },
-    ]);
-    expect(sim.rooms[2].byId.d1.isOpen).toBe(false);
+});
+
+describe('new abilities are required', () => {
+  const withoutStep = (roomIndex, drop) => SOLUTIONS[roomIndex].filter((s, i) => !drop(s, i));
+
+  it('room 3: walking into the laser grid kills; without Swap the chamber is unreachable', () => {
+    const sim = new Simulation();
+    sim.roomManager.begin(2);
+    let death = null;
+    sim.bus.on('player:death', (e) => (death = e.reason));
+    const pilot = new Autopilot(sim, [{ goto: [0, -4.6] }]);
+    for (let i = 0; i < 300 && !death; i++) sim.step(pilot.next());
+    expect(death).toBe('laser');
+
+    const sim2 = new Simulation();
+    sim2.roomManager.begin(2);
+    const res = runSteps(sim2, withoutStep(2, (s) => s.swap !== undefined), 60 * 80);
+    expect(sim2.rooms[2].complete).toBe(false);
+    expect(res.pilot.error).not.toBeNull();
   });
 
-  it('room 4: the timed gate closes before a sprinting player arrives', () => {
-    const sim = soloAttempt(3, [
-      { goto: [-7.4, 8.4] },
-      { interact: 'tb1' },
-      { goto: [6, -6.5], timeout: 4 },
-    ]);
-    expect(sim.player.pos.z).toBeGreaterThan(sim.rooms[3].origin.z - 5);
+  it('room 4: without Freeze the gate chain cannot be cleared', () => {
+    const sim = new Simulation();
+    sim.roomManager.begin(3);
+    runSteps(sim, withoutStep(3, (s) => s.freeze !== undefined), 60 * 45);
+    expect(sim.rooms[3].complete).toBe(false);
+    expect(sim.player.pos.z).toBeGreaterThan(sim.rooms[3].origin.z - 8);
+  });
+
+  it('room 5: an Echo routed through the furnace burns before reaching the plate', () => {
+    const sim = new Simulation();
+    sim.roomManager.begin(4);
+    const reasons = [];
+    sim.bus.on('echo:collapse', (e) => reasons.push(e.reason));
+    runSteps(sim, [{ goto: [0, 3.6] }, { waitRoom: 15.05 }, { wait: 6 }], 60 * 22);
+    expect(reasons).toContain('sacrifice');
+    expect(sim.room.byId.furnace.signal).toBe(true);
+    expect(sim.room.byId.pA.signal).toBe(false);
   });
 });
+
+function runSteps(sim, steps, maxTicks) {
+  const pilot = new Autopilot(sim, steps, { label: 'variant' });
+  let deaths = 0;
+  sim.bus.on('player:death', () => deaths++);
+  for (let i = 0; i < maxTicks && !pilot.done; i++) sim.step(pilot.next());
+  return { pilot, deaths };
+}

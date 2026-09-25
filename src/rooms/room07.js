@@ -13,6 +13,7 @@ export default {
   entranceX: 0,
   exitX: 0,
   maxEchoes: 4,
+  abilities: ['swap', 'freeze'],
   accent: 'blue',
   walls: [
     ...wallZ(9, -7, -4),

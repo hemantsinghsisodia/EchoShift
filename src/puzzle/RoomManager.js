@@ -49,6 +49,7 @@ export class RoomManager {
   startRoom(room) {
     const sim = this.sim;
     sim.echoes.clear();
+    sim.abilities?.reset();
     sim.cycleTick = 0;
     if (room.kind === 'puzzle') sim.recorder.start(sim.player);
     else sim.recorder.stop();

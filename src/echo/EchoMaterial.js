@@ -16,11 +16,14 @@ export function createEchoMaterial(hue = 0) {
       uRim: { value: rim },
       uIntensity: { value: 1 },
       uGlitch: { value: 0 },
+      uFrozen: { value: 0 },
+      uFlash: { value: 0 },
     },
     vertexShader: /* glsl */ `
       uniform float uTime;
       uniform float uSeed;
       uniform float uGlitch;
+      uniform float uFrozen;
       varying vec3 vN;
       varying vec3 vV;
       varying vec3 vW;
@@ -29,8 +32,9 @@ export function createEchoMaterial(hue = 0) {
         vec3 p = position;
         float slice = floor((p.y + uTime * 0.5) * 9.0);
         float g = step(0.93 - uGlitch * 0.4, hash(slice + floor(uTime * 12.0) + uSeed));
-        p.x += (hash(slice * 1.7 + floor(uTime * 20.0)) - 0.5) * 0.14 * g;
-        p += normal * sin(uTime * 7.0 + p.y * 12.0 + uSeed) * 0.006;
+        float live = 1.0 - uFrozen;
+        p.x += (hash(slice * 1.7 + floor(uTime * 20.0)) - 0.5) * 0.14 * g * live;
+        p += normal * sin(uTime * 7.0 + p.y * 12.0 + uSeed) * 0.006 * live;
         vec4 w = modelMatrix * vec4(p, 1.0);
         vW = w.xyz;
         vec4 mv = viewMatrix * w;
@@ -46,6 +50,8 @@ export function createEchoMaterial(hue = 0) {
       uniform vec3 uColor;
       uniform vec3 uRim;
       uniform float uIntensity;
+      uniform float uFrozen;
+      uniform float uFlash;
       varying vec3 vN;
       varying vec3 vV;
       varying vec3 vW;
@@ -65,7 +71,12 @@ export function createEchoMaterial(hue = 0) {
         float band = smoothstep(0.0, 0.05, fract(vW.y * 0.8 - uTime * 0.35)) * 0.25;
         float flicker = 0.9 + 0.1 * sin(uTime * 31.0 + uSeed);
         vec3 col = uColor * (0.18 + 0.35 * scan + band) + uRim * fres * 2.4 + vec3(1.0) * edge * 3.0;
-        float a = (0.22 + 0.25 * scan + fres * 0.9 + edge) * flicker;
+        vec3 facets = abs(fract(vW * 3.5) - 0.5);
+        float crack = smoothstep(0.46, 0.5, max(max(facets.x, facets.y), facets.z));
+        vec3 ice = vec3(0.75, 0.95, 1.0) * (0.35 + fres * 2.2 + crack * 1.6);
+        col = mix(col, ice, uFrozen) + vec3(0.6, 0.9, 1.0) * uFlash * 3.0;
+        flicker = mix(flicker, 1.0, uFrozen);
+        float a = (0.22 + 0.25 * scan + fres * 0.9 + edge + uFlash) * flicker;
         gl_FragColor = vec4(col * uIntensity * a, a);
       }
     `,

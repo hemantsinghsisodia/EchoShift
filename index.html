@@ -34,6 +34,12 @@
           <span id="hud-echo-count">0/2</span>
         </div>
         <div class="echo-pips" id="echo-pips"></div>
+        <div id="paradox" class="paradox hidden">PARADOX: <b id="paradox-value">0%</b></div>
+      </div>
+
+      <div id="abilities" class="abilities hidden">
+        <div class="ability" id="ab-swap"><b>Q</b><span>SWAP</span><i class="cd"></i></div>
+        <div class="ability" id="ab-freeze"><b>F</b><span>FREEZE</span><i class="cd"></i></div>
       </div>
 
       <div class="hud-bottom-left">
@@ -42,7 +48,7 @@
       </div>
 
       <div id="crosshair"><i></i></div>
-      <div id="prompt" class="hidden"><b>E</b> <span id="prompt-text">ACTIVATE</span></div>
+      <div id="prompt" class="hidden"><span id="prompt-text"><b>E</b> ACTIVATE</span></div>
       <div id="toast" class="hidden"><div class="toast-head" id="toast-head">ROOM 01</div><div class="toast-body" id="toast-body"></div></div>
       <div id="tutorial" class="hidden"><div class="tut-step" id="tut-step">1/5</div><div id="tut-text"></div></div>
       <div id="banner" class="hidden"></div>
@@ -82,6 +88,8 @@
               <li><b>SHIFT</b> SPRINT</li>
               <li><b>SPACE</b> JUMP</li>
               <li><b>E</b> INTERACT</li>
+              <li><b>Q</b> ECHO SWAP</li>
+              <li><b>F</b> ECHO FREEZE</li>
               <li><b>R</b> RESTART ROOM</li>
               <li><b>ESC</b> PAUSE</li>
             </ul>

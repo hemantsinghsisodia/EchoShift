@@ -299,6 +299,55 @@ input[type='range']::-moz-range-thumb { width: 12px; height: 12px; background: #
 .echo-pips i { width: 22px; height: 6px; background: rgba(90, 140, 255, 0.2); transform: skewX(-20deg); transition: background 0.2s, box-shadow 0.2s; }
 .echo-pips i.on { background: linear-gradient(90deg, #5fe3ff, var(--purple)); box-shadow: 0 0 8px #5fe3ff; }
 
+.paradox {
+  margin-top: 10px;
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.3em;
+  color: rgba(200, 160, 255, 0.55);
+  animation: paradoxIn 1.2s ease-out;
+}
+
+.paradox b { color: #d9b8ff; font-weight: 400; }
+.paradox.bump b { animation: paradoxBump 0.6s ease-out; }
+
+@keyframes paradoxIn { 0% { opacity: 0; filter: blur(4px); } 30% { opacity: 1; color: #fff; } 100% { opacity: 1; } }
+@keyframes paradoxBump { 0% { color: #fff; text-shadow: 0 0 10px var(--purple); } 100% { color: #d9b8ff; text-shadow: none; } }
+
+.abilities {
+  position: absolute;
+  right: 22px;
+  bottom: 18px;
+  display: flex;
+  gap: 10px;
+}
+
+.ability {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 14px;
+  overflow: hidden;
+  font-size: 12px;
+  letter-spacing: 0.25em;
+  background: rgba(8, 14, 34, 0.7);
+  border: 1px solid rgba(95, 227, 255, 0.45);
+  clip-path: polygon(8px 0, 100% 0, calc(100% - 8px) 100%, 0 100%);
+  transition: border-color 0.2s, opacity 0.2s;
+}
+
+.ability b { font-family: var(--mono); padding: 0 6px; border: 1px solid #5fe3ff; color: #5fe3ff; }
+.ability .cd { position: absolute; left: 0; bottom: 0; height: 2px; width: 100%; background: linear-gradient(90deg, #5fe3ff, var(--purple)); transform-origin: left; }
+.ability.cooling { opacity: 0.55; border-color: rgba(95, 227, 255, 0.2); }
+.ability.used { animation: abilityUsed 0.4s ease-out; }
+
+@keyframes abilityUsed { 0% { background: rgba(95, 227, 255, 0.45); } 100% { background: rgba(8, 14, 34, 0.7); } }
+
+#prompt .sep { margin: 0 10px; opacity: 0.4; }
+#prompt.echo { border-color: rgba(95, 227, 255, 0.55); color: #dff8ff; }
+#prompt.echo b { border-color: #5fe3ff; color: #5fe3ff; }
+
 .hud-bottom-left {
   position: absolute;
   left: 22px;

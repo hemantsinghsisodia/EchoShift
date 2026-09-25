@@ -30,6 +30,8 @@ In Windows PowerShell 5.1, chain commands with `;` instead of `&&` (for example 
 | Shift | Sprint |
 | Space | Jump |
 | E (or left click) | Interact |
+| Q | Echo Swap (from room 3) |
+| F | Echo Freeze (from room 4) |
 | R | Restart the current room |
 | Esc | Pause |
 
@@ -40,7 +42,16 @@ In Windows PowerShell 5.1, chain commands with `;` instead of `&&` (for example 
 - When the replay ends, the Echo **holds its final position**, so it keeps plates pressed for you.
 - Each room has an Echo limit. When a new Echo would go over the limit, the oldest one dissolves.
 - Echoes can't be hurt by lasers, but a door closing on one collapses it (a paradox).
-- Colours: blue means inactive, green activated, red dangerous and white is the objective. Glowing floor lines show which plate or switch powers which door.
+- Colours: blue means inactive, green activated, red dangerous and white is the objective.
+
+## Echo abilities
+
+- **Echo Swap (Q), from room 3:** aim at an Echo within 10 m and trade places with it. The Echo's whole remaining path, and every button press still to come, shifts by the distance you swapped. Walls and closed doors block line of sight, but glass and lasers don't. You can't swap into a laser, over a pit or into a wall. 3 s cooldown.
+- **Echo Freeze (F), from room 4:** aim at an Echo within 12 m to stop it for 5 s. It keeps holding whatever it stands on, and everything it does afterwards happens 5 s later. One frozen Echo at a time, 8 s cooldown.
+- **Echo Furnace, from room 5:** a floor device that is harmless to you but permanently destroys any Echo that walks into it, which switches the furnace on for good.
+- **PARADOX:** a meter that appears once you start bending the timeline. Swaps, freezes, sacrifices and Echoes collapsed by doors all raise it. It never goes down during a run.
+
+Rooms opt into abilities with `abilities: ['swap', 'freeze']` in their config. New objects: `furnace` (`pos`, `size`), `glass` boxes (block movement but not line of sight) and pulsing lasers (`pulse: { period, on, offset }`, with periods that divide 15 s). Glowing floor lines show which plate or switch powers which door.
 
 ## Project structure
 
@@ -71,7 +82,7 @@ The simulation never imports Three.js. Rendering, audio and UI subscribe to simu
 
 ## Tests
 
-`npm test` covers collision, movement, echo recording, echo replay (interpolation, yaw wrap-around, exactly-once events), interaction replay, paradox collapse, logic (including `sync` window edges), puzzle objects, room reset and death, room transitions and the ending. It also runs a **headless playthrough of every room** using the scripted solutions, checks that rooms 1, 3 and 4 can't be solved alone, and plays the whole game from start to escape.
+`npm test` covers Echo Swap (path offset, blink frames, line of sight, hazards, cooldown), Echo Freeze (exact event delay, plate holding, one-at-a-time), the furnace, Paradox, collision, movement, echo recording, echo replay (interpolation, yaw wrap-around, exactly-once events), interaction replay, paradox collapse, logic (including `sync` window edges), puzzle objects, room reset and death, room transitions and the ending. It also runs a **headless playthrough of every room** using the scripted solutions, checks that rooms 1, 3 and 4 can't be solved alone, and plays the whole game from start to escape.
 
 ## Debug hooks
 

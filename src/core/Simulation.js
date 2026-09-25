@@ -9,6 +9,9 @@ import { Player } from '../player/Player.js';
 import { findTarget, tryInteract } from '../player/Interaction.js';
 import { EchoRecorder } from '../echo/EchoRecorder.js';
 import { EchoManager } from '../echo/EchoManager.js';
+import { EchoAbilities } from '../echo/EchoAbilities.js';
+import { Paradox } from './Paradox.js';
+import { ABILITIES, PARADOX_COST } from './config.js';
 import { ROOM_CONFIGS, PUZZLE_ROOM_COUNT } from '../rooms/index.js';
 
 /**
@@ -38,19 +41,27 @@ export class Simulation {
     this.endingTick = 0;
     this.godMode = false;
     this.target = null;
+    this.echoTarget = null;
     this.lastInteracted = null;
     this.activators = [];
+    this.paradox = new Paradox(bus);
+    this.abilities = new EchoAbilities(this);
+    bus.on('echo:collapse', ({ reason }) => {
+      if (reason === 'paradox') this.paradox.add(PARADOX_COST.collapse, 'collapse');
+    });
 
     this.ctx = {
       bus,
       activators: this.activators,
       onObjective: () => this.roomManager.complete(this.room),
+      onSacrifice: (echo, device) => this.sacrifice(echo, device),
     };
     this.echoCtx = {
       platforms: [],
       doors: [],
       onEvent: (echo, ev) => this.replayEvent(echo, ev),
       onStep: (echo) => bus.emit('echo:step', { echo, pos: echo.pos }),
+      onUnfreeze: (echo) => bus.emit('echo:unfreeze', { echo, pos: echo.pos }),
     };
     this.roomManager.begin(0);
   }
@@ -69,6 +80,8 @@ export class Simulation {
 
   newGame() {
     this.stats.reset();
+    this.paradox.reset();
+    this.abilities.reset();
     this.state = 'playing';
     this.tick = 0;
     this.endingTick = 0;
@@ -102,6 +115,14 @@ export class Simulation {
       this.target.interact(player, this.ctx);
       this.recorder.recordEvent(this.cycleTick, 'interact', this.target.id);
       this.target = findTarget(player, room.interactables);
+    }
+
+    if (this.abilities.anyAllowed) {
+      if (input.swap) this.abilities.trySwap();
+      if (input.freeze) this.abilities.tryFreeze();
+      this.echoTarget = this.abilities.target(Math.max(ABILITIES.swapRange, ABILITIES.freezeRange));
+    } else {
+      this.echoTarget = null;
     }
 
     this.recorder.record(this.cycleTick, player);
@@ -145,7 +166,17 @@ export class Simulation {
       tryInteract(echo, obj, this.ctx);
     } else if (ev.type === 'jump') {
       this.bus.emit('echo:jump', { echo, pos: echo.pos });
+    } else if (ev.type === 'swap') {
+      this.bus.emit('echo:blink', { echo, pos: echo.pos });
     }
+  }
+
+  sacrifice(echo, device) {
+    if (!echo.isActivator) return;
+    echo.collapse('sacrifice');
+    this.paradox.add(PARADOX_COST.sacrifice, 'sacrifice');
+    this.bus.emit('echo:collapse', { echo, reason: 'sacrifice' });
+    this.bus.emit('echo:sacrifice', { echo, device, pos: { ...echo.pos } });
   }
 
   checkHazards() {

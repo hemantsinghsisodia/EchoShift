@@ -107,6 +107,31 @@ export class Autopilot {
       return null;
     }
 
+    if (step.swap !== undefined || step.freeze !== undefined) {
+      const ability = step.swap !== undefined ? 'swap' : 'freeze';
+      const serial = step[ability];
+      const echo = sim.echoes.echoes.find((e) => e.serial === serial && e.isActivator);
+      if (!st.data.pressed) {
+        if (!echo) return this.fail(`echo ${serial} not found`), null;
+        this.yaw = yawTo(sim.player.pos.x, sim.player.pos.z, echo.pos.x, echo.pos.z);
+        st.data.pressed = true;
+        const input = idleInput(this.yaw, this.pitch);
+        input[ability] = true;
+        return input;
+      }
+      const r = sim.abilities.lastResult;
+      if (!r || r.ability !== ability || !r.ok) this.fail(`${ability} failed: ${r?.reason ?? 'no result'}`);
+      return null;
+    }
+
+    if (step.waitEcho !== undefined) {
+      const echo = sim.echoes.echoes.find((e) => e.serial === step.waitEcho && e.isActivator);
+      if (!echo) return idleInput(this.yaw, this.pitch);
+      const t = this.world(room, step.near);
+      this.yaw = yawTo(sim.player.pos.x, sim.player.pos.z, echo.pos.x, echo.pos.z);
+      return dist2D(echo.pos.x, echo.pos.z, t.x, t.z) <= (step.tol ?? 0.4) ? null : idleInput(this.yaw, this.pitch);
+    }
+
     if (step.waitRoom !== undefined) return room.clock / TICK_RATE >= step.waitRoom ? null : idleInput(this.yaw, this.pitch);
 
     if (step.wait !== undefined) return (sim.tick - st.startTick) / TICK_RATE >= step.wait ? null : idleInput(this.yaw, this.pitch);

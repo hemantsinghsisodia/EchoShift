@@ -1,6 +1,7 @@
 import { ECHO_RADIUS, PLAYER, ECHO_SPAWN_TICKS, ECHO_COLLAPSE_TICKS } from '../core/config.js';
 import { FLAG_GROUNDED, FLAG_WALKING } from '../player/Player.js';
 import { v3, copy3 } from '../math/vec.js';
+import { TimelineMap } from './TimelineEdits.js';
 
 /**
  * A replaying past self. States: spawning -> replaying -> holding; collapsing on eviction/paradox.
@@ -9,6 +10,9 @@ import { v3, copy3 } from '../math/vec.js';
 export class Echo {
   constructor(track, id, platforms) {
     this.track = track;
+    this.timeline = new TimelineMap(track.lengthTicks, 0);
+    this.lastInteractionEvent = null;
+    this.startAt = 0;
     this.id = `echo${id}`;
     this.serial = id;
     this.kind = 'echo';
@@ -82,6 +86,25 @@ export class Echo {
     this.frozenTicks = ticks;
   }
 
+  restartFrom(trackTick) {
+    this.timeline.add('restart', trackTick, this.timeline.trackTick);
+    this.eventCursor = this.track.events.findIndex((event) => event.tick >= trackTick);
+    if (this.eventCursor < 0) this.eventCursor = this.track.events.length;
+    this.state = 'replaying';
+  }
+
+  fireForwardEvents(ctx, previousTick, trackTick) {
+    const events = this.track.events;
+    while (this.eventCursor < events.length && events[this.eventCursor].tick <= previousTick) {
+      this.eventCursor++;
+    }
+    while (this.eventCursor < events.length && events[this.eventCursor].tick <= trackTick) {
+      const event = events[this.eventCursor++];
+      ctx.onEvent?.(this, event);
+      if (event.type === 'interact') this.lastInteractionEvent = event;
+    }
+  }
+
   applySample(t, platforms) {
     const s = this.track.sample(t, this.cursor, platforms, this.sampleOut);
     this.pos.x = s.x + this.offset.x;
@@ -119,15 +142,18 @@ export class Echo {
       return;
     }
     if (this.state !== 'holding') {
-      this.replayTick++;
+      const step = this.timeline.advance();
+      this.replayTick = step.trackTick;
+      this.applySample(step.trackTick, ctx.platforms);
+      if (step.direction > 0 && !step.discontinuity) {
+        this.fireForwardEvents(ctx, step.previousTick, step.trackTick);
+      } else if (step.direction > 0 && step.discontinuity) {
+        this.eventCursor = this.track.events.findIndex((event) => event.tick > step.trackTick);
+        if (this.eventCursor < 0) this.eventCursor = this.track.events.length;
+      }
       if (this.state === 'spawning' && this.age >= ECHO_SPAWN_TICKS) this.state = 'replaying';
-    }
-    this.applySample(Math.min(this.replayTick, last), ctx.platforms);
-
-    const events = this.track.events;
-    while (this.eventCursor < events.length && events[this.eventCursor].tick <= this.replayTick) {
-      ctx.onEvent?.(this, events[this.eventCursor]);
-      this.eventCursor++;
+    } else {
+      this.applySample(this.replayTick, ctx.platforms);
     }
 
     if (this.state !== 'holding' && this.replayTick >= last) this.state = 'holding';

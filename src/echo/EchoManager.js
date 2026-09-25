@@ -20,7 +20,7 @@ export class EchoManager {
     return n;
   }
 
-  spawn(track, maxEchoes, platforms) {
+  spawn(track, maxEchoes, platforms, { startAt = 0 } = {}) {
     const live = this.live;
     let over = live.length + 1 - maxEchoes;
     for (let i = 0; i < live.length && over > 0; i++, over--) {
@@ -28,6 +28,13 @@ export class EchoManager {
       this.bus?.emit('echo:collapse', { echo: live[i], reason: 'evicted' });
     }
     const echo = new Echo(track, this.nextSerial++, platforms);
+    if (startAt > 0) {
+      echo.timeline.trackTick = Math.min(track.lengthTicks, startAt);
+      echo.replayTick = echo.timeline.trackTick;
+      echo.applySample(echo.replayTick, platforms);
+      echo.eventCursor = track.events.findIndex((event) => event.tick > startAt);
+      if (echo.eventCursor < 0) echo.eventCursor = track.events.length;
+    }
     this.echoes.push(echo);
     this.bus?.emit('echo:spawn', { echo });
     return echo;

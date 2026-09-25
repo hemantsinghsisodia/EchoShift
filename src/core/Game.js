@@ -10,6 +10,7 @@ import { TimelineEditor } from '../ui/TimelineEditor.js';
 import { Tutorial } from '../ui/Tutorial.js';
 import { loadSettings, saveSettings } from '../ui/Settings.js';
 import { TICK_RATE } from './config.js';
+import { playerDeathNotice } from './playerDeathNotice.js';
 
 const LOCK_FALLBACK_MS = 450;
 
@@ -305,10 +306,12 @@ export class Game {
       ui.banner(reason === 'death' ? 'TIMELINE RESET' : 'ROOM RESET', 'cyan');
     });
     bus.on('player:respawn', () => this.input.setLook(this.sim.player.yaw, 0));
-    bus.on('player:death', ({ reason }) => {
-      a.play('death');
+    bus.on('player:death', ({ reason, pos }) => {
+      const notice = playerDeathNotice(reason);
+      if (notice.sound === 'hunterStrike') a.play('hunterStrike', { pos });
+      else a.play(notice.sound);
       ui.flash('var(--red)', 0.7);
-      ui.banner(reason === 'laser' ? 'LASER CONTACT' : 'FELL INTO THE VOID', 'red');
+      ui.banner(notice.banner, 'red');
     });
     bus.on('cycle:warning', ({ seconds }) => a.play('tick', { last: seconds === 1 }));
     bus.on('ending:start', () => {

@@ -122,11 +122,14 @@ describe('Echo Hunter', () => {
 
   it('hears a walking player only within 3 m and a sprinting player within 8 m', () => {
     const h1 = new Hunter({ pos: [0, 0], patrol: [[0, 0]] }, room);
-    h1.update(ctx({ player: player(4, 0, false) }));
-    expect(h1.target).toBeNull();
+    h1.update(ctx({ player: player(3, 0, false) }));
+    expect(h1.target.kind).toBe('player');
     const h2 = new Hunter({ pos: [0, 0], patrol: [[0, 0]] }, room);
-    h2.update(ctx({ player: player(7.5, 0, true) }));
+    h2.update(ctx({ player: player(8, 0, true) }));
     expect(h2.target.kind).toBe('player');
+    const outside = new Hunter({ pos: [0, 0], patrol: [[0, 0]] }, room);
+    outside.update(ctx({ player: player(4, 0, false) }));
+    expect(outside.target).toBeNull();
   });
 
   it('catches an Echo and the player', () => {
@@ -145,6 +148,22 @@ describe('Echo Hunter', () => {
     hunter.reset();
     hunter.update(ctx({ player: player(0.5, 0), killPlayer: () => killed++ }));
     expect(killed).toBe(1);
+  });
+
+  it('catches at the inclusive 0.8 m post-move boundary', () => {
+    let hunted = 0;
+    const hunter = new Hunter({ pos: [0, 0], patrol: [[0, 0]] }, room);
+    const boundary = echo(
+      1,
+      HUNTER.catchDistance + HUNTER.speed * DT,
+      0,
+      FLAG_GROUNDED | FLAG_WALKING,
+    );
+
+    hunter.update(ctx({ echoes: [boundary], huntEcho: () => hunted++ }));
+
+    expect(Math.abs(boundary.pos.x - hunter.pos.x)).toBeCloseTo(HUNTER.catchDistance, 10);
+    expect(hunted).toBe(1);
   });
 
   it('invokes a catch once until the actor becomes valid again', () => {
@@ -197,7 +216,22 @@ describe('Echo Hunter', () => {
     expect(hunter.state).toBe('patrol');
   });
 
-  it('clears a stuck target at the exact limit and selects the nearest patrol waypoint', () => {
+  it('switches targets when the exact 1-second lock expires', () => {
+    const hunter = new Hunter({ pos: [0, 0], patrol: [[0, 0]] }, room);
+    const first = echo(1, 11, 0, FLAG_GROUNDED | FLAG_WALKING);
+    const louder = echo(2, 10, 0, FLAG_GROUNDED | FLAG_WALKING | FLAG_SPRINTING);
+    hunter.update(ctx({ echoes: [first] }));
+
+    for (let tick = 1; tick < HUNTER.targetLockTicks; tick++) {
+      hunter.update(ctx({ echoes: [first, louder] }));
+    }
+    expect(hunter.target).toBe(first);
+
+    hunter.update(ctx({ echoes: [first, louder] }));
+    expect(hunter.target).toBe(louder);
+  });
+
+  it('finishes patrol recovery before reacquiring a blocked audible target', () => {
     const wall = { min: [0.1, -1, -1], max: [0.2, 2, 1] };
     const blockedWorld = { query: () => [wall] };
     const hunter = new Hunter({ pos: [0, 0], patrol: [[-2, 0], [8, 0]] }, room);
@@ -214,6 +248,30 @@ describe('Echo Hunter', () => {
     expect(hunter.state).toBe('patrol');
     expect(hunter.patrolIndex).toBe(0);
     expect(hunter.stuckTicks).toBe(0);
+    expect(hunter.recovering).toBe(true);
+
+    const recoveryStart = hunter.pos.x;
+    for (let tick = 0; tick < 5; tick++) {
+      hunter.update(ctx({ echoes: [audible], world: blockedWorld }));
+      expect(hunter.target).toBeNull();
+      expect(hunter.recovering).toBe(true);
+    }
+    expect(hunter.pos.x).toBeLessThan(recoveryStart);
+
+    let recoveryTicks = 5;
+    while (hunter.recovering && recoveryTicks < 200) {
+      hunter.update(ctx({ echoes: [audible], world: blockedWorld }));
+      recoveryTicks++;
+    }
+    expect(recoveryTicks).toBeLessThan(200);
+    expect(hunter.recovering).toBe(false);
+    expect(hunter.target).toBeNull();
+
+    hunter.update(ctx({ echoes: [audible], world: blockedWorld }));
+    expect(hunter.target).toBe(audible);
+
+    hunter.reset();
+    expect(hunter.recovering).toBe(false);
   });
 
   it('resets stuck tracking when forward progress resumes', () => {

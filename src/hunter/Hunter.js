@@ -32,6 +32,7 @@ export class Hunter {
     this.lockTicks = 0;
     this.lostTicks = 0;
     this.stuckTicks = 0;
+    this.recovering = false;
     this.alert = 0;
     this.consumedTargets.clear();
   }
@@ -111,19 +112,37 @@ export class Hunter {
     return nearest;
   }
 
+  moveToward(goal, distance, world) {
+    if (distance <= 0.001) return;
+    this.pos.x += ((goal.x - this.pos.x) / distance) * HUNTER.speed * DT;
+    this.pos.z += ((goal.z - this.pos.z) / distance) * HUNTER.speed * DT;
+    const boxes = world.query(this.pos.x, this.pos.z, 2);
+    resolveHorizontal(this.pos, this.radius, this.height, boxes, 0);
+  }
+
   update(ctx) {
     copy3(this.prevPos, this.pos);
-    const candidate = this.chooseTarget(ctx);
-    if (candidate && this.lockTicks <= 0) {
-      if (candidate !== this.target) {
-        this.target = candidate;
-        this.lockTicks = HUNTER.targetLockTicks;
-        this.lostTicks = 0;
-        this.stuckTicks = 0;
-        ctx.bus?.emit('hunter:alert', { hunter: this, target: candidate });
+
+    if (this.recovering) {
+      this.state = 'patrol';
+      const waypoint = this.patrol[this.patrolIndex];
+      const distance = dist2D(this.pos.x, this.pos.z, waypoint.x, waypoint.z);
+      if (distance < 0.35) {
+        this.recovering = false;
+        return;
       }
-    } else if (this.lockTicks > 0) {
-      this.lockTicks--;
+      this.moveToward(waypoint, distance, ctx.world);
+      return;
+    }
+
+    const candidate = this.chooseTarget(ctx);
+    if (this.lockTicks > 0) this.lockTicks--;
+    if (candidate && this.lockTicks <= 0 && candidate !== this.target) {
+      this.target = candidate;
+      this.lockTicks = HUNTER.targetLockTicks;
+      this.lostTicks = 0;
+      this.stuckTicks = 0;
+      ctx.bus?.emit('hunter:alert', { hunter: this, target: candidate });
     }
 
     if (this.target && !candidate) {
@@ -139,12 +158,7 @@ export class Hunter {
       this.patrolIndex = (this.patrolIndex + 1) % this.patrol.length;
       return;
     }
-    if (distance > 0.001) {
-      this.pos.x += ((goal.x - this.pos.x) / distance) * HUNTER.speed * DT;
-      this.pos.z += ((goal.z - this.pos.z) / distance) * HUNTER.speed * DT;
-      const boxes = ctx.world.query(this.pos.x, this.pos.z, 2);
-      resolveHorizontal(this.pos, this.radius, this.height, boxes, 0);
-    }
+    this.moveToward(goal, distance, ctx.world);
 
     if (!this.target) {
       this.stuckTicks = 0;
@@ -168,6 +182,7 @@ export class Hunter {
       this.clearTarget();
       this.patrolIndex = this.nearestPatrolIndex();
       this.state = 'patrol';
+      this.recovering = true;
     }
   }
 }

@@ -4,12 +4,14 @@ import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass.js';
 import { OutputPass } from 'three/examples/jsm/postprocessing/OutputPass.js';
 import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js';
+import { isTouchDevice } from '../core/device.js';
 
 export const FOG_COLOR = 0x05060d;
 
 /** WebGL renderer, scene, first-person camera and the HDR bloom post-processing chain. */
 export class Renderer {
   constructor(container) {
+    this.touch = isTouchDevice();
     this.renderer = new THREE.WebGLRenderer({ antialias: false, powerPreference: 'high-performance', stencil: false });
     this.pixelRatio = Math.min(window.devicePixelRatio || 1, 1.5);
     this.renderer.setPixelRatio(this.pixelRatio);
@@ -33,12 +35,14 @@ export class Renderer {
     this.camera.rotation.order = 'YXZ';
     this.scene.add(this.camera);
 
-    const target = new THREE.WebGLRenderTarget(window.innerWidth, window.innerHeight, { type: THREE.HalfFloatType, samples: 4 });
+    const target = new THREE.WebGLRenderTarget(window.innerWidth, window.innerHeight, { type: THREE.HalfFloatType, samples: this.touch ? 0 : 4 });
     this.composer = new EffectComposer(this.renderer, target);
     this.composer.setPixelRatio(this.pixelRatio);
     this.composer.setSize(window.innerWidth, window.innerHeight);
     this.composer.addPass(new RenderPass(this.scene, this.camera));
-    this.bloom = new UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 0.7, 0.35, 0.9);
+    const bloomW = this.touch ? window.innerWidth * 0.5 : window.innerWidth;
+    const bloomH = this.touch ? window.innerHeight * 0.5 : window.innerHeight;
+    this.bloom = new UnrealBloomPass(new THREE.Vector2(bloomW, bloomH), 0.7, 0.35, 0.9);
     this.composer.addPass(this.bloom);
     this.composer.addPass(new OutputPass());
 
@@ -52,6 +56,7 @@ export class Renderer {
     this.camera.updateProjectionMatrix();
     this.renderer.setSize(w, h);
     this.composer.setSize(w, h);
+    if (this.touch) this.bloom.resolution.set(Math.max(1, w * 0.5), Math.max(1, h * 0.5));
   }
 
   render() {

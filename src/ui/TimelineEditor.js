@@ -3,6 +3,7 @@ import { EDIT_TYPES } from '../echo/TimelineEdits.js';
 
 const $ = (id) => document.getElementById(id);
 const HELP = 'A/D SELECT TIME · 1-4 SELECT EDIT · ENTER APPLY · T CLOSE';
+const HELP_TOUCH = 'TAP TIME · TAP EDIT · APPLY · CLOSE';
 
 export class TimelineEditor {
   constructor(sim, { onClose, onPreview } = {}) {
@@ -14,6 +15,38 @@ export class TimelineEditor {
     this.cursorTick = 0;
     this.selected = 'delete';
     this.echo = null;
+    this.bindTouch();
+  }
+
+  bindTouch() {
+    const track = $('timeline-track');
+    const scrub = (e) => {
+      if (!this.isOpen) return;
+      const rect = track.getBoundingClientRect();
+      const t = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+      const tick = Math.round((t * CYCLE_TICKS) / TIMELINE.cursorStepTicks) * TIMELINE.cursorStepTicks;
+      this.cursorTick = Math.max(0, Math.min(CYCLE_TICKS - TIMELINE.sectionTicks, tick));
+      this.render();
+    };
+    track.addEventListener('pointerdown', (e) => {
+      if (!this.isOpen) return;
+      scrub(e);
+      const move = (ev) => scrub(ev);
+      const up = () => {
+        window.removeEventListener('pointermove', move);
+        window.removeEventListener('pointerup', up);
+      };
+      window.addEventListener('pointermove', move);
+      window.addEventListener('pointerup', up);
+    });
+    $('timeline-ops').addEventListener('click', (e) => {
+      const op = e.target.closest('[data-type]');
+      if (!op || !this.isOpen) return;
+      const index = EDIT_TYPES.indexOf(op.dataset.type);
+      if (index >= 0) this.handleKey(`Digit${index + 1}`);
+    });
+    $('timeline-apply').addEventListener('click', () => { if (this.isOpen) this.handleKey('Enter'); });
+    $('timeline-close').addEventListener('click', () => { if (this.isOpen) this.handleKey('KeyT'); });
   }
 
   open(echo, remaining) {
@@ -25,7 +58,7 @@ export class TimelineEditor {
     this.isOpen = true;
     this.root.classList.remove('hidden');
     const message = $('timeline-message');
-    message.textContent = HELP;
+    message.textContent = document.body.classList.contains('touch') ? HELP_TOUCH : HELP;
     message.classList.remove('error');
     this.render();
   }
@@ -65,7 +98,7 @@ export class TimelineEditor {
       .join('');
     $('timeline-ops').innerHTML = EDIT_TYPES.map((type, index) => {
       const count = this.remaining[type] ?? 0;
-      return `<div class="timeline-op ${count ? 'allowed' : ''} ${type === this.selected ? 'selected' : ''}">${index + 1} ${type.toUpperCase()} ×${count}</div>`;
+      return `<button type="button" data-type="${type}" class="timeline-op ${count ? 'allowed' : ''} ${type === this.selected ? 'selected' : ''}">${index + 1} ${type.toUpperCase()} ×${count}</button>`;
     }).join('');
     this.onPreview?.(this.echo, this.cursorTick);
   }

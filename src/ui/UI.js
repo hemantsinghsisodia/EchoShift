@@ -145,13 +145,14 @@ export class UI {
     const t = live ? sim.target : null;
     const echo = live && !t ? sim.echoTarget : null;
     let html = '';
+    const touch = document.body.classList.contains('touch');
     if (t) {
       const label = t.type === 'node' ? `CHARGE ${t.label}` : t.type === 'button' ? 'PRESS BUTTON' : t.mode === 'toggle' ? 'TOGGLE SWITCH' : 'PRESS SWITCH';
-      html = `<b>E</b>${label}`;
+      html = touch ? `<b>USE</b>${label}` : `<b>E</b>${label}`;
     } else if (echo) {
       const parts = [];
-      if (sim.abilities.allowed('swap')) parts.push(`<b>Q</b>SWAP ECHO ${echo.serial}`);
-      if (sim.abilities.allowed('freeze')) parts.push(`<b>F</b>FREEZE`);
+      if (sim.abilities.allowed('swap')) parts.push(touch ? `<b>SWAP</b>ECHO ${echo.serial}` : `<b>Q</b>SWAP ECHO ${echo.serial}`);
+      if (sim.abilities.allowed('freeze')) parts.push(touch ? `<b>FREEZE</b>` : `<b>F</b>FREEZE`);
       html = parts.join('<span class="sep">|</span>');
     }
     this.set('prompt', this.el.promptText, html, 'innerHTML');

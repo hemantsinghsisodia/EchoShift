@@ -10,7 +10,9 @@ import { TimelineEditor } from '../ui/TimelineEditor.js';
 import { Tutorial } from '../ui/Tutorial.js';
 import { loadSettings, saveSettings } from '../ui/Settings.js';
 import { TICK_RATE } from './config.js';
+import { isPortrait } from './device.js';
 import { playerDeathNotice } from './playerDeathNotice.js';
+import { TouchControls } from '../ui/TouchControls.js';
 
 const LOCK_FALLBACK_MS = 450;
 
@@ -65,7 +67,17 @@ export class Game {
       }
       return false;
     };
+    this.touch = this.input.touch
+      ? new TouchControls(this.input, { onPause: () => this.pause(), onEdit: () => this.openTimeline() })
+      : null;
+    this.pausedForPortrait = false;
+    if (this.input.touch && typeof window.matchMedia === 'function') {
+      this.portraitQuery = window.matchMedia('(orientation: portrait)');
+      this.portraitQuery.addEventListener?.('change', () => this.syncOrientation());
+      window.addEventListener('resize', () => this.syncOrientation());
+    }
     this.renderer.canvas.addEventListener('click', () => {
+      if (this.input.touch) return;
       if (this.state === 'playing' && !this.input.locked) this.input.requestLock();
     });
     this.bindSimEvents();
@@ -76,6 +88,7 @@ export class Game {
   // ---------- state machine ----------
 
   onAction(action) {
+    if (this.input.touch && ['play', 'begin', 'resume', 'again'].includes(action)) this.requestMobileDisplay();
     switch (action) {
       case 'play':
         this.ui.show('briefing');
@@ -111,11 +124,38 @@ export class Game {
     this.enterPlaying();
   }
 
+  requestMobileDisplay() {
+    const el = document.documentElement;
+    const req = el.requestFullscreen || el.webkitRequestFullscreen;
+    try { req?.call(el); } catch { /* fullscreen is optional */ }
+    try { globalThis.screen?.orientation?.lock?.('landscape'); } catch { /* iOS ignores orientation lock */ }
+  }
+
+  syncOrientation() {
+    if (!this.input.touch) return;
+    const portrait = isPortrait();
+    document.body.classList.toggle('portrait', portrait);
+    if (portrait) {
+      if (this.state === 'playing') {
+        this.pausedForPortrait = true;
+        this.loop.simulating = false;
+      }
+    } else if (this.pausedForPortrait) {
+      this.pausedForPortrait = false;
+      if (this.state === 'playing') this.loop.simulating = true;
+    }
+  }
+
   enterPlaying() {
     this.state = 'starting';
     this.ui.hideScreens();
     this.ui.showHUD(true);
     this.input.enabled = true;
+    if (this.input.touch) {
+      this.setPlaying();
+      this.syncOrientation();
+      return;
+    }
     this.input.requestLock();
     clearTimeout(this.lockTimer);
     this.lockTimer = setTimeout(() => {
@@ -212,6 +252,8 @@ export class Game {
       this.ui.update(this.sim);
       if (this.state === 'playing') this.tutorial.update(dt);
     }
+    this.touch?.setVisible(this.state === 'playing' && !isPortrait());
+    if (this.touch && !menu) this.touch.sync(this.sim);
     if (this.showDebug) this.updateDebug(dt);
   }
 

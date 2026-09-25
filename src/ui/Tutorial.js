@@ -1,4 +1,4 @@
-const STEPS = [
+const DESKTOP_STEPS = [
   { text: 'Use <b>W A S D</b> to move and the <em>mouse</em> to look around.' },
   { text: 'Hold <b>SHIFT</b> to sprint. Press <b>SPACE</b> to jump.' },
   { text: 'Stand on the glowing <em>pressure plate</em> and watch the <em>ECHO CYCLE</em> timer (top right).' },
@@ -6,6 +6,17 @@ const STEPS = [
   { text: 'Look at the <em>white energy node</em> and press <b>E</b> to charge it.' },
   { text: 'Room clear. The exit is open. Press <b>R</b> any time to restart a room if you get stuck.' },
 ];
+
+const TOUCH_STEPS = [
+  { text: 'Drag the <b>LEFT STICK</b> to move. Drag the <em>right side</em> of the screen to look.' },
+  { text: 'Tap <b>SPRINT</b> to run. Tap <b>JUMP</b> to jump.' },
+  { text: 'Stand on the glowing <em>pressure plate</em> and watch the <em>ECHO CYCLE</em> timer (top right).' },
+  { text: 'That hologram is your <em>Echo</em>. It repeats your last 15 seconds, then holds its final position. Let it hold the plate while you go through the gate.' },
+  { text: 'Look at the <em>white energy node</em> and tap <b>USE</b> to charge it.' },
+  { text: 'Room clear. The exit is open. Tap <b>RESTART</b> any time to restart a room if you get stuck.' },
+];
+
+const steps = () => (document.body.classList.contains('touch') ? TOUCH_STEPS : DESKTOP_STEPS);
 
 /** Action-driven tutorial for room 1: each step advances when the player does the thing. */
 export class Tutorial {
@@ -44,7 +55,8 @@ export class Tutorial {
     if (i <= this.step) return;
     this.step = i;
     this.stepTime = 0;
-    this.ui.tutorial(STEPS[i].text, `${i + 1}/${STEPS.length}`);
+    const list = steps();
+    this.ui.tutorial(list[i].text, `${i + 1}/${list.length}`);
   }
 
   update(dt) {

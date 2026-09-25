@@ -7,7 +7,7 @@ No backend and no external assets: the geometry, textures, shaders, music and so
 ## Requirements
 
 - Node.js 18 or newer (tested on Node 26)
-- A modern desktop browser with WebGL2 (Chrome, Edge, Firefox)
+- A modern browser with WebGL2 (Chrome, Edge, Firefox), including mobile browsers in landscape
 
 ## Install, run, build
 
@@ -37,6 +37,23 @@ In Windows PowerShell 5.1, chain commands with `;` instead of `&&` (for example 
 | 1-4 / Enter | Select and apply a timeline edit |
 | R | Restart the current room |
 | Esc | Pause |
+
+## Play on mobile
+
+The game is landscape-only on a phone. Open it in Chrome or Safari, tap PLAY, and turn the phone sideways. In portrait a rotate screen covers the game and time stops.
+
+| Touch | Action |
+| --- | --- |
+| Left stick | Move (push it to the edge to sprint) |
+| Drag the right side | Look |
+| Tap the right side | Interact |
+| JUMP / USE / SPRINT | Jump, interact, sprint toggle |
+| SWAP / FREEZE / EDIT | Echo abilities, when the room allows them |
+| PAUSE / RESTART | Pause menu, restart the room |
+
+In the timeline editor, tap the track to move the cursor, tap an edit, then APPLY. CLOSE returns to the game.
+
+Deploy on Vercel by importing this repo. Use the Vite preset: build command `npm run build`, output directory `dist`. Open the Vercel URL on your phone and turn it sideways.
 
 ## How the Echo works
 

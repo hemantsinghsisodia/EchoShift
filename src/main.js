@@ -1,8 +1,10 @@
 import './styles/main.css';
+import { markTouchDevice } from './core/device.js';
 import { Game } from './core/Game.js';
 import { attachDebugHooks } from './debug/DebugHooks.js';
 
 function boot() {
+  markTouchDevice();
   const loading = document.getElementById('loading');
   try {
     const game = new Game(document.getElementById('app'));

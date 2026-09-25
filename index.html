@@ -2,7 +2,7 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
     <title>ECHO SHIFT</title>
     <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='11' fill='none' stroke='%2346c8ff' stroke-width='3'/%3E%3Ccircle cx='16' cy='16' r='4' fill='%23b06bff'/%3E%3C/svg%3E" />
   </head>
@@ -55,6 +55,22 @@
       <div id="debug-overlay" class="hidden"></div>
     </div>
 
+    <div id="touch-layer" class="hidden">
+      <div id="touch-move"></div>
+      <div id="touch-look"></div>
+      <div id="touch-stick" class="hidden"><i></i></div>
+      <div id="touch-buttons">
+        <button type="button" data-touch="pause" id="touch-pause">PAUSE</button>
+        <button type="button" data-touch="restart" id="touch-restart">RESTART</button>
+        <button type="button" data-touch="edit" id="touch-edit">EDIT</button>
+        <button type="button" data-touch="swap" id="touch-swap">SWAP</button>
+        <button type="button" data-touch="freeze" id="touch-freeze">FREEZE</button>
+        <button type="button" data-touch="sprint" id="touch-sprint">SPRINT</button>
+        <button type="button" data-touch="interact" id="touch-use">USE</button>
+        <button type="button" data-touch="jump" id="touch-jump">JUMP</button>
+      </div>
+    </div>
+
     <div id="timeline-editor" class="timeline-editor hidden">
       <div class="panel timeline-panel">
         <div class="timeline-head">
@@ -69,6 +85,10 @@
         </div>
         <div class="timeline-time"><span id="timeline-time">00.0s</span><span>SECTION 02.0s</span></div>
         <div id="timeline-ops" class="timeline-ops"></div>
+        <div class="timeline-actions">
+          <button type="button" id="timeline-apply" class="btn small">APPLY</button>
+          <button type="button" id="timeline-close" class="btn small">CLOSE</button>
+        </div>
         <div id="timeline-message" class="timeline-message">A/D SELECT TIME · 1-4 SELECT EDIT · ENTER APPLY · T CLOSE</div>
       </div>
     </div>
@@ -110,6 +130,16 @@
               <li><b>F</b> ECHO FREEZE</li>
               <li><b>R</b> RESTART ROOM</li>
               <li><b>ESC</b> PAUSE</li>
+            </ul>
+            <ul class="keys touch-keys">
+              <li><b>LEFT STICK</b> MOVE</li>
+              <li><b>RIGHT DRAG</b> LOOK</li>
+              <li><b>SPRINT</b> RUN</li>
+              <li><b>JUMP</b> JUMP</li>
+              <li><b>USE</b> INTERACT</li>
+              <li><b>SWAP / FREEZE</b> ECHO</li>
+              <li><b>EDIT</b> TIMELINE</li>
+              <li><b>PAUSE</b> PAUSE</li>
             </ul>
           </div>
           <div>
@@ -197,6 +227,13 @@
     </div>
 
     <div id="loading" class="screen"><div class="loading-text">INITIALISING LAB<span class="dots"></span></div></div>
+
+    <div id="rotate-overlay">
+      <div class="panel dialog narrow">
+        <h2>ROTATE YOUR DEVICE</h2>
+        <p>ECHO SHIFT plays in landscape.</p>
+      </div>
+    </div>
 
     <script type="module" src="/src/main.js"></script>
   </body>

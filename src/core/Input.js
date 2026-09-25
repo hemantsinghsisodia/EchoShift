@@ -1,24 +1,37 @@
-const JUMP_BUFFER_MS = 130;
+import { isTouchDevice } from './device.js';
 
-/** Keyboard + pointer-lock mouse input. Produces an immutable snapshot per simulation tick. */
+const JUMP_BUFFER_MS = 130;
+const STICK_DEAD = 0.3;
+const STICK_SPRINT = 0.9;
+
+/** Keyboard, pointer-lock mouse, and touch input. Produces an immutable snapshot per simulation tick. */
 export class Input {
   constructor(element, settings) {
     this.element = element;
     this.settings = settings;
+    this.touch = isTouchDevice();
     this.keys = new Set();
     this.yaw = 0;
     this.pitch = 0;
     this.jumpAt = -Infinity;
     this.interactQueued = false;
-    this.locked = false;
+    this.swapQueued = false;
+    this.freezeQueued = false;
+    this.moveX = 0;
+    this.moveY = 0;
+    this.sprintHeld = false;
+    this.locked = this.touch;
     this.enabled = false;
     this.handlers = { restart: null, lockChange: null, keyDown: null };
+
+    if (typeof window === 'undefined' || typeof document === 'undefined') return;
 
     window.addEventListener('keydown', (e) => this.onKeyDown(e));
     window.addEventListener('keyup', (e) => this.keys.delete(e.code));
     window.addEventListener('blur', () => this.keys.clear());
     document.addEventListener('mousemove', (e) => this.onMouseMove(e));
     document.addEventListener('pointerlockchange', () => {
+      if (this.touch) return;
       this.locked = document.pointerLockElement === this.element;
       if (!this.locked) this.keys.clear();
       this.handlers.lockChange?.(this.locked);
@@ -29,6 +42,10 @@ export class Input {
   }
 
   requestLock() {
+    if (this.touch) {
+      this.locked = true;
+      return;
+    }
     try {
       const p = this.element.requestPointerLock();
       if (p && p.catch) p.catch(() => {});
@@ -38,7 +55,34 @@ export class Input {
   }
 
   exitLock() {
+    if (this.touch) return;
     if (document.pointerLockElement) document.exitPointerLock();
+  }
+
+  /** Joystick axes in -1..1. Positive Y is forward. */
+  setMove(x, y) {
+    this.moveX = x;
+    this.moveY = y;
+  }
+
+  setSprint(on) {
+    this.sprintHeld = !!on;
+  }
+
+  addLook(dx, dy) {
+    const touchScale = this.touch ? 2.2 : 1;
+    const s = 0.0022 * (this.settings.sensitivity ?? 1) * touchScale;
+    this.yaw -= dx * s;
+    this.pitch -= dy * s;
+    this.pitch = Math.max(-1.5, Math.min(1.5, this.pitch));
+  }
+
+  press(action) {
+    if (action === 'jump') this.jumpAt = performance.now();
+    if (action === 'interact') this.interactQueued = true;
+    if (action === 'swap') this.swapQueued = true;
+    if (action === 'freeze') this.freezeQueued = true;
+    if (action === 'restart') this.handlers.restart?.();
   }
 
   onKeyDown(e) {
@@ -61,11 +105,8 @@ export class Input {
   }
 
   onMouseMove(e) {
-    if (!this.locked || !this.enabled) return;
-    const s = 0.0022 * (this.settings.sensitivity ?? 1);
-    this.yaw -= e.movementX * s;
-    this.pitch -= e.movementY * s;
-    this.pitch = Math.max(-1.5, Math.min(1.5, this.pitch));
+    if (this.touch || !this.locked || !this.enabled) return;
+    this.addLook(e.movementX, e.movementY);
   }
 
   setLook(yaw, pitch = 0) {
@@ -83,12 +124,13 @@ export class Input {
     this.interactQueued = false;
     this.swapQueued = false;
     this.freezeQueued = false;
+    const stick = Math.hypot(this.moveX, this.moveY);
     return {
-      forward: k.has('KeyW') || k.has('ArrowUp'),
-      back: k.has('KeyS') || k.has('ArrowDown'),
-      left: k.has('KeyA') || k.has('ArrowLeft'),
-      right: k.has('KeyD') || k.has('ArrowRight'),
-      sprint: k.has('ShiftLeft') || k.has('ShiftRight'),
+      forward: k.has('KeyW') || k.has('ArrowUp') || this.moveY > STICK_DEAD,
+      back: k.has('KeyS') || k.has('ArrowDown') || this.moveY < -STICK_DEAD,
+      left: k.has('KeyA') || k.has('ArrowLeft') || this.moveX < -STICK_DEAD,
+      right: k.has('KeyD') || k.has('ArrowRight') || this.moveX > STICK_DEAD,
+      sprint: k.has('ShiftLeft') || k.has('ShiftRight') || this.sprintHeld || stick > STICK_SPRINT,
       jump,
       interact,
       swap,

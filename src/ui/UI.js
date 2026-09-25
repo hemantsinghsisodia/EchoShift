@@ -44,6 +44,7 @@ export class UI {
     this.settingsReturn = 'menu';
     this.toastTimer = null;
     this.bannerTimer = null;
+    this.tutorialTimer = null;
 
     document.querySelectorAll('[data-action]').forEach((btn) => {
       btn.addEventListener('click', (e) => {
@@ -207,6 +208,7 @@ export class UI {
   }
 
   toast(head, body, ms = 5200) {
+    if (document.body.classList.contains('touch') && ms === 5200) ms = 2500;
     const t = this.el.toast;
     this.el.toastHead.textContent = head;
     this.el.toastBody.textContent = body;
@@ -229,6 +231,7 @@ export class UI {
   }
 
   tutorial(html, step = '') {
+    clearTimeout(this.tutorialTimer);
     if (!html) {
       this.el.tutorial.classList.add('hidden');
       return;
@@ -239,6 +242,9 @@ export class UI {
     this.el.tutorial.style.animation = 'none';
     void this.el.tutorial.offsetWidth;
     this.el.tutorial.style.animation = '';
+    if (document.body.classList.contains('touch')) {
+      this.tutorialTimer = setTimeout(() => this.el.tutorial.classList.add('hidden'), 5000);
+    }
   }
 
   flash(color = 'var(--red)', strength = 0.55) {

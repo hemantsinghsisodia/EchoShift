@@ -71,7 +71,7 @@ Move the player's question from "how can I change what my Echo will do?" toward 
 ## Echo corruption
 
 - **Authored glitches:**
-  - Room config: `corruption: [{ cycle, at, echo, type, ... }]`. `echo` is the Echo's number, and `at` is seconds into that cycle.
+  - Room config: `corruption: [{ cycle, at, echo, type, ... }]`. `echo` is the Echo's number, and `at` is absolute seconds on the room clock. `cycle` guards the event so it only fires during the intended recording generation.
   - Types:
     - `stare`: the Echo turns toward the player for 1.5 s. This changes facing only.
     - `pause`: it stops replaying for 0.5 s (like a short freeze).

@@ -24,6 +24,10 @@ export class Resonance {
       echo.track.sample(tick, cursor, [], out);
       cells.add(this.key(out.x, out.z));
     }
+    if (echo.track.lengthTicks % 30 !== 0) {
+      echo.track.sample(echo.track.lengthTicks, cursor, [], out);
+      cells.add(this.key(out.x, out.z));
+    }
     this.cellsBySerial.set(echo.serial, cells);
   }
 

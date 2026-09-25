@@ -14,6 +14,7 @@ const cfg = {
     { type: 'plate', id: 'p', pos: [0, 0, 0] },
     { type: 'switch', id: 'sw', mode: 'pulse', pos: [5, 0, 5] },
     { type: 'switch', id: 'tg', mode: 'toggle', pos: [-5, 0, 5] },
+    { type: 'switch', id: 'br', mode: 'breaker', pos: [0, 0, 5] },
     { type: 'button', id: 'tb', pos: [5, 0, -5], duration: 2 },
     { type: 'door', id: 'd', pos: [0, 0, -8], opensWhen: 'p', openTime: 0.5, closeTime: 0.25 },
     { type: 'laser', id: 'l', min: [-2, 0, 3], max: [2, 3, 3.1], activeWhen: not('tg') },
@@ -84,6 +85,31 @@ describe('puzzle objects', () => {
     expect(room.byId.tb.signal).toBe(true);
     for (let i = 0; i < 3; i++) tick(room);
     expect(room.byId.tb.signal).toBe(false);
+  });
+
+  it('breaker trips on its second press and resets to off and usable', () => {
+    const room = new Room(cfg, 1, { x: 0, z: 0 });
+    const breaker = room.byId.br;
+    const ctx = { bus: null };
+
+    breaker.interact(actor(0, 0), ctx);
+    tick(room);
+    expect(breaker.signal).toBe(true);
+    expect(breaker.broken).toBe(false);
+
+    breaker.interact(actor(0, 0), ctx);
+    tick(room);
+    expect(breaker.signal).toBe(false);
+    expect(breaker.broken).toBe(true);
+
+    breaker.interact(actor(0, 0), ctx);
+    tick(room);
+    expect(breaker.signal).toBe(false);
+
+    room.reset();
+    expect(breaker.on).toBe(false);
+    expect(breaker.signal).toBe(false);
+    expect(breaker.broken).toBe(false);
   });
 
   it('laser kills only when active and overlapping', () => {

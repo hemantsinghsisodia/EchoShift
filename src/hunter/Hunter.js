@@ -116,7 +116,7 @@ export class Hunter {
     if (distance <= 0.001) return;
     this.pos.x += ((goal.x - this.pos.x) / distance) * HUNTER.speed * DT;
     this.pos.z += ((goal.z - this.pos.z) / distance) * HUNTER.speed * DT;
-    const boxes = world.query(this.pos.x, this.pos.z, 2);
+    const boxes = world.queryForHunter(this.pos.x, this.pos.z, 2);
     resolveHorizontal(this.pos, this.radius, this.height, boxes, 0);
   }
 

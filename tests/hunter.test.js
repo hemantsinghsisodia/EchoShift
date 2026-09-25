@@ -3,6 +3,8 @@ import { Hunter } from '../src/hunter/Hunter.js';
 import { Resonance } from '../src/hunter/Resonance.js';
 import { HUNTER, DT } from '../src/core/config.js';
 import { FLAG_GROUNDED, FLAG_WALKING, FLAG_SPRINTING, FLAG_JUMPING } from '../src/player/Player.js';
+import { PhysicsWorld } from '../src/physics/PhysicsWorld.js';
+import { Simulation } from '../src/core/Simulation.js';
 
 const room = {
   origin: { x: 0, z: 0 },
@@ -11,7 +13,7 @@ const room = {
   lasers: [],
   staticBoxes: [],
 };
-const world = { query: () => [] };
+const world = { query: () => [], queryForHunter: () => [] };
 const echo = (serial, x, z, flags) => ({
   id: `echo${serial}`,
   serial,
@@ -233,7 +235,7 @@ describe('Echo Hunter', () => {
 
   it('finishes patrol recovery before reacquiring a blocked audible target', () => {
     const wall = { min: [0.1, -1, -1], max: [0.2, 2, 1] };
-    const blockedWorld = { query: () => [wall] };
+    const blockedWorld = { query: () => [wall], queryForHunter: () => [wall] };
     const hunter = new Hunter({ pos: [0, 0], patrol: [[-2, 0], [8, 0]] }, room);
     hunter.patrolIndex = 1;
     const audible = echo(1, 2, 0, FLAG_GROUNDED | FLAG_WALKING);
@@ -277,7 +279,10 @@ describe('Echo Hunter', () => {
   it('resets stuck tracking when forward progress resumes', () => {
     const wall = { min: [0.1, -1, -1], max: [0.2, 2, 1] };
     let blocked = true;
-    const variableWorld = { query: () => (blocked ? [wall] : []) };
+    const variableWorld = {
+      query: () => (blocked ? [wall] : []),
+      queryForHunter: () => (blocked ? [wall] : []),
+    };
     const hunter = new Hunter({ pos: [0, 0], patrol: [[-2, 0]] }, room);
     const audible = echo(1, 2, 0, FLAG_GROUNDED | FLAG_WALKING);
 
@@ -303,5 +308,98 @@ describe('Echo Hunter', () => {
     expect(first.prevPos).toEqual({ x: 0, y: 0, z: 0 });
     expect(first.pos.x).toBeCloseTo(HUNTER.speed * DT);
     expect(first.pos.z).toBe(0);
+  });
+
+  it('uses the Hunter collision query while moving', () => {
+    let queries = 0;
+    const hunter = new Hunter({ pos: [0, 0], patrol: [[4, 0]] }, room);
+    const hunterWorld = {
+      query: () => {
+        throw new Error('ordinary query used');
+      },
+      queryForHunter: () => {
+        queries++;
+        return [];
+      },
+    };
+
+    hunter.update(ctx({ world: hunterWorld }));
+
+    expect(queries).toBe(1);
+  });
+});
+
+describe('Hunter integration', () => {
+  const roomConfig = {
+    id: 96,
+    name: 'HUNTER TEST',
+    w: 12,
+    d: 12,
+    entranceX: 0,
+    exitX: 0,
+    maxEchoes: 2,
+    objects: [],
+    hunter: { pos: [0, 3], patrol: [[0, 3], [0, 0]] },
+  };
+
+  it('resets the room Hunter to its spawn point', () => {
+    const sim = new Simulation({ roomConfigs: [roomConfig] });
+    expect(sim.room.hunter ?? null).not.toBeNull();
+    const spawn = { ...sim.room.hunter.spawn };
+    sim.room.hunter.pos.x += 4;
+
+    sim.restartRoom();
+
+    expect(sim.room.hunter.pos).toMatchObject(spawn);
+  });
+
+  it('hunted Echo collapse adds five Paradox exactly once', () => {
+    const sim = new Simulation({ roomConfigs: [roomConfig] });
+    const collapseEvents = [];
+    const strikeEvents = [];
+    let active = true;
+    const echo = {
+      get isActivator() {
+        return active;
+      },
+      pos: { x: 1, y: 0, z: 2 },
+      collapse(reason) {
+        this.reason = reason;
+        active = false;
+      },
+    };
+    sim.bus.on('echo:collapse', (event) => collapseEvents.push(event));
+    sim.bus.on('hunter:strike', (event) => strikeEvents.push(event));
+
+    sim.huntEcho(echo, sim.room.hunter);
+    sim.huntEcho(echo, sim.room.hunter);
+
+    expect(echo.reason).toBe('hunted');
+    expect(sim.paradox.value).toBe(5);
+    expect(collapseEvents).toHaveLength(1);
+    expect(strikeEvents).toHaveLength(1);
+  });
+
+  it('adds active lasers only to stable Hunter query results', () => {
+    const active = { min: [-1, 0, -1], max: [1, 2, 1] };
+    const inactive = { min: [2, 0, 2], max: [3, 2, 3] };
+    const testRoom = {
+      staticBoxes: [],
+      nearXZ: () => true,
+      dynamicBoxes: () => [],
+      lasers: [
+        { active: true, box: active },
+        { active: false, box: inactive },
+      ],
+    };
+    const physics = new PhysicsWorld([testRoom]);
+
+    expect(physics.query(0, 0)).not.toContain(active);
+    const hunterBoxes = physics.queryForHunter(0, 0);
+    expect(hunterBoxes).toContain(active);
+    expect(hunterBoxes).not.toContain(inactive);
+
+    physics.query(100, 100);
+    expect(hunterBoxes).toContain(active);
   });
 });

@@ -1,7 +1,9 @@
 import { describe, it, expect } from 'vitest';
-import { TimelineMap, TimelineEdits } from '../src/echo/TimelineEdits.js';
+import { TimelineMap, TimelineEdits, EDIT_TYPES } from '../src/echo/TimelineEdits.js';
 import { EchoRecorder } from '../src/echo/EchoRecorder.js';
 import { Echo } from '../src/echo/Echo.js';
+import { Simulation } from '../src/core/Simulation.js';
+import { CYCLE_TICKS, TIMELINE_COST } from '../src/core/config.js';
 
 const advance = (map, ticks) => Array.from({ length: ticks }, () => map.advance());
 
@@ -22,6 +24,19 @@ function runEcho(echo, ticks) {
   const ctx = { platforms: [], onEvent: (_echo, event) => fired.push(event.targetId) };
   for (let i = 0; i < ticks; i++) echo.update(ctx);
   return fired;
+}
+
+function editHarness() {
+  const echo = { isActivator: true, timeline: new TimelineMap(900) };
+  const charges = [];
+  const events = [];
+  const sim = {
+    room: { cfg: { edits: { delete: 2, freeze: 2, reverse: 2, restart: 2 } } },
+    echoes: { echoes: [echo] },
+    paradox: { add: (amount, reason) => charges.push({ amount, reason }) },
+    bus: { emit: (type, payload) => events.push({ type, payload }) },
+  };
+  return { edits: new TimelineEdits(sim), echo, charges, events };
 }
 
 describe('TimelineMap', () => {
@@ -75,6 +90,37 @@ describe('TimelineMap', () => {
   });
 });
 
+describe('TimelineEdits', () => {
+  it('decrements only the selected room edit use', () => {
+    const { edits, echo } = editHarness();
+
+    edits.apply(echo, 'freeze', 120);
+
+    expect(edits.remaining).toEqual({ delete: 2, freeze: 1, reverse: 2, restart: 2 });
+  });
+
+  it.each(EDIT_TYPES.map((type) => [type, TIMELINE_COST[type]]))('charges the exact %s Paradox cost', (type, cost) => {
+    const { edits, echo, charges } = editHarness();
+
+    edits.apply(echo, type, 120);
+
+    expect(charges).toEqual([{ amount: cost, reason: `timeline:${type}` }]);
+  });
+
+  it('emits timeline:edit with the applied operation', () => {
+    const { edits, echo, events } = editHarness();
+
+    const result = edits.apply(echo, 'delete', 120);
+
+    expect(events).toEqual([
+      {
+        type: 'timeline:edit',
+        payload: { echo, type: 'delete', cursorTick: 120, op: result.op },
+      },
+    ]);
+  });
+});
+
 it('delete drops events inside the skipped section', () => {
   const echo = new Echo(eventTrack(), 1, []);
   echo.timeline.add('delete', 90, 0);
@@ -92,4 +138,87 @@ it('restart rewinds the event cursor so later events fire again', () => {
   expect(runEcho(echo, 220)).toEqual(['switch100', 'switch180']);
   echo.restartFrom(80);
   expect(runEcho(echo, 140)).toEqual(['switch100', 'switch180']);
+});
+
+describe('Timeline integration', () => {
+  const roomConfig = {
+    id: 97,
+    name: 'TIMELINE TEST',
+    w: 12,
+    d: 12,
+    entranceX: 0,
+    exitX: 0,
+    maxEchoes: 2,
+    edits: { delete: 1, restart: 1 },
+    objects: [],
+  };
+
+  it('resets room edit uses on restart but preserves Paradox', () => {
+    const sim = new Simulation({ roomConfigs: [roomConfig] });
+    expect(sim.timelineEdits.newestEcho()).toBeNull();
+    sim.timelineEdits.remaining.delete = 0;
+    sim.paradox.add(5, 'timeline:delete');
+
+    sim.restartRoom();
+
+    expect(sim.timelineEdits.remaining.delete).toBe(sim.room.cfg.edits.delete);
+    expect(sim.paradox.value).toBe(5);
+  });
+
+  it('opens on the newest live Echo without changing simulation state', () => {
+    const sim = new Simulation({ roomConfigs: [roomConfig] });
+    const older = { isActivator: true };
+    const newest = { isActivator: true };
+    sim.echoes.echoes.push(older, newest);
+
+    const result = sim.openTimeline();
+
+    expect(result).toEqual({
+      ok: true,
+      echo: newest,
+      remaining: { delete: 1, restart: 1 },
+    });
+    expect(sim.state).toBe('playing');
+    result.remaining.delete = 0;
+    expect(sim.timelineEdits.remaining.delete).toBe(1);
+  });
+
+  it('reports locked and empty timelines without changing simulation state', () => {
+    const { edits: _edits, ...lockedConfig } = roomConfig;
+    const locked = new Simulation({ roomConfigs: [lockedConfig] });
+    const empty = new Simulation({ roomConfigs: [roomConfig] });
+
+    expect(locked.openTimeline()).toEqual({ ok: false, reason: 'TIMELINE LOCKED' });
+    expect(empty.openTimeline()).toEqual({ ok: false, reason: 'NO ECHO' });
+    expect(locked.state).toBe('playing');
+    expect(empty.state).toBe('playing');
+  });
+
+  it('increments cycleIndex before spawn and resets cycle systems on restart', () => {
+    const sim = new Simulation({ roomConfigs: [roomConfig] });
+    const spawnCycles = [];
+    sim.bus.on('echo:spawn', () => spawnCycles.push(sim.cycleIndex));
+
+    for (let tick = 0; tick < CYCLE_TICKS; tick++) sim.step();
+
+    expect(spawnCycles).toEqual([1]);
+    expect(sim.cycleIndex).toBe(1);
+    expect(sim.resonance.cellsBySerial.size).toBe(1);
+
+    sim.restartRoom();
+    expect(sim.cycleIndex).toBe(0);
+    expect(sim.resonance.cellsBySerial.size).toBe(0);
+  });
+
+  it('keeps one resonance registration listener across room restarts', () => {
+    const sim = new Simulation({ roomConfigs: [roomConfig] });
+    sim.restartRoom();
+    sim.restartRoom();
+    let registrations = 0;
+    sim.resonance.register = () => registrations++;
+
+    sim.bus.emit('echo:spawn', { echo: {} });
+
+    expect(registrations).toBe(1);
+  });
 });

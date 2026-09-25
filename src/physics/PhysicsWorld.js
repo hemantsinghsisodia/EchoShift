@@ -54,4 +54,14 @@ export class PhysicsWorld {
     }
     return out;
   }
+
+  /** Ordinary nearby colliders plus active laser barriers, in a stable result array. */
+  queryForHunter(x, z, range = 4) {
+    const out = [...this.query(x, z, range)];
+    for (const room of this.rooms) {
+      if (!room.nearXZ(x, z, range + 2)) continue;
+      for (const laser of room.lasers) if (laser.active) out.push(laser.box);
+    }
+    return out;
+  }
 }

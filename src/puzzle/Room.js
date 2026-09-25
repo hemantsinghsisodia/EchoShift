@@ -9,6 +9,7 @@ import { MovingPlatform } from '../objects/MovingPlatform.js';
 import { Laser } from '../objects/Laser.js';
 import { EnergyNode } from '../objects/EnergyNode.js';
 import { EchoFurnace } from '../objects/EchoFurnace.js';
+import { Hunter } from '../hunter/Hunter.js';
 import { wallX, wallZ } from '../rooms/helpers.js';
 import { DOOR_WIDTH } from '../core/config.js';
 
@@ -61,6 +62,7 @@ export class Room {
     this.interactables = [];
     this.puzzle = new Puzzle(this);
     this.buildObjects();
+    this.hunter = cfg.hunter ? new Hunter(cfg.hunter, this) : null;
 
     const ex = origin.x + (cfg.entranceX ?? 0);
     const southZ = this.bounds.maxZ;
@@ -197,6 +199,7 @@ export class Room {
     this.clock = 0;
     this.complete = false;
     for (const obj of this.objects) obj.reset();
+    this.hunter?.reset();
     this.puzzle.reset();
     this.updatePlatforms();
     const ctx = { activators: [], bus: null };

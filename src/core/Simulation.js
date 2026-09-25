@@ -10,6 +10,8 @@ import { findTarget, tryInteract } from '../player/Interaction.js';
 import { EchoRecorder } from '../echo/EchoRecorder.js';
 import { EchoManager } from '../echo/EchoManager.js';
 import { EchoAbilities } from '../echo/EchoAbilities.js';
+import { TimelineEdits } from '../echo/TimelineEdits.js';
+import { Resonance } from '../hunter/Resonance.js';
 import { Paradox } from './Paradox.js';
 import { ABILITIES, PARADOX_COST } from './config.js';
 import { ROOM_CONFIGS, PUZZLE_ROOM_COUNT } from '../rooms/index.js';
@@ -46,6 +48,10 @@ export class Simulation {
     this.activators = [];
     this.paradox = new Paradox(bus);
     this.abilities = new EchoAbilities(this);
+    this.timelineEdits = new TimelineEdits(this);
+    this.resonance = new Resonance();
+    this.cycleIndex = 0;
+    bus.on('echo:spawn', ({ echo }) => this.resonance.register(echo));
     bus.on('echo:collapse', ({ reason }) => {
       if (reason === 'paradox') this.paradox.add(PARADOX_COST.collapse, 'collapse');
     });
@@ -76,6 +82,13 @@ export class Simulation {
 
   get recording() {
     return this.recorder.active;
+  }
+
+  openTimeline() {
+    if (!this.room.cfg.edits) return { ok: false, reason: 'TIMELINE LOCKED' };
+    const echo = this.timelineEdits.newestEcho();
+    if (!echo) return { ok: false, reason: 'NO ECHO' };
+    return { ok: true, echo, remaining: { ...this.timelineEdits.remaining } };
   }
 
   newGame() {
@@ -131,6 +144,21 @@ export class Simulation {
     this.echoCtx.doors = room.doors;
     this.echoes.update(this.echoCtx);
 
+    const hunter = room.hunter;
+    if (hunter) {
+      hunter.update({
+        player,
+        echoes: this.echoes.echoes,
+        room,
+        world: this.world,
+        resonance: this.resonance,
+        bus: this.bus,
+        killPlayer: (reason) => this.kill(reason),
+        huntEcho: (echo, source) => this.huntEcho(echo, source),
+      });
+      if (this.state === 'dying') return;
+    }
+
     this.activators.length = 0;
     this.activators.push(player);
     for (const e of this.echoes.echoes) if (e.isActivator) this.activators.push(e);
@@ -148,6 +176,7 @@ export class Simulation {
 
     if (this.recorder.active && this.cycleTick >= CYCLE_TICKS) {
       const track = this.recorder.finish(this.cycleTick, player);
+      this.cycleIndex++;
       this.echoes.spawn(track, this.room.maxEchoes, this.room.platforms);
       this.stats.echoesCreated++;
       this.recorder.start(player);
@@ -177,6 +206,14 @@ export class Simulation {
     this.paradox.add(PARADOX_COST.sacrifice, 'sacrifice');
     this.bus.emit('echo:collapse', { echo, reason: 'sacrifice' });
     this.bus.emit('echo:sacrifice', { echo, device, pos: { ...echo.pos } });
+  }
+
+  huntEcho(echo, hunter) {
+    if (!echo?.isActivator) return;
+    echo.collapse('hunted');
+    this.paradox.add(5, 'hunted');
+    this.bus.emit('echo:collapse', { echo, reason: 'hunted' });
+    this.bus.emit('hunter:strike', { hunter, target: echo, pos: { ...echo.pos } });
   }
 
   checkHazards() {

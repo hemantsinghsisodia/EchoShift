@@ -499,7 +499,7 @@ describe('Echo Hunter', () => {
     const walk = echo(1, 7, 0, FLAG_GROUNDED | FLAG_WALKING);
     const sprint = echo(2, 10, 0, FLAG_GROUNDED | FLAG_WALKING | FLAG_SPRINTING);
     const resonance = new Resonance();
-    resonance.markOlderCell(3, 7, 0);
+    resonance.markOlderCell(1, 7, 0);
     const resonant = echo(3, 7, 0, FLAG_GROUNDED | FLAG_WALKING);
     hunter.update(ctx(hunter, { echoes: [walk, sprint, resonant], resonance }));
     expect(hunter.target).toBe(resonant);

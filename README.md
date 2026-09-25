@@ -32,6 +32,9 @@ In Windows PowerShell 5.1, chain commands with `;` instead of `&&` (for example 
 | E (or left click) | Interact |
 | Q | Echo Swap (from room 3) |
 | F | Echo Freeze (from room 4) |
+| T | Edit the newest Echo's timeline (rooms that allow it) |
+| A / D | Move the timeline cursor while editing |
+| 1-4 / Enter | Select and apply a timeline edit |
 | R | Restart the current room |
 | Esc | Pause |
 
@@ -52,6 +55,20 @@ In Windows PowerShell 5.1, chain commands with `;` instead of `&&` (for example 
 - **PARADOX:** a meter that appears once you start bending the timeline. Swaps, freezes, sacrifices and Echoes collapsed by doors all raise it. It never goes down during a run.
 
 Rooms opt into abilities with `abilities: ['swap', 'freeze']` in their config. New objects: `furnace` (`pos`, `size`), `glass` boxes (block movement but not line of sight) and pulsing lasers (`pulse: { period, on, offset }`, with periods that divide 15 s). Glowing floor lines show which plate or switch powers which door.
+
+## Phase 2 mechanics
+
+- **Echo Hunter (room 6):** a slow sentinel that hunts moving Echoes. Sprinting, jumping and retracing an older Echo's route make a recording louder. A still or frozen Echo is silent. The Hunter can destroy Echoes and resets the room if it catches you.
+- **Timeline editing (room 7):** press T to pause and edit the newest Echo. Delete skips 2 seconds, Freeze holds it for 2 seconds, Reverse runs a 2-second section backward, and Restart jumps back to the selected timestamp. Rooms limit which edits exist and how many times they can be used.
+- **Echo corruption (room 8):** rare authored and deterministic Paradox-driven visual glitches. Some authored glitches can briefly pause an Echo or repeat a press; random glitches never change puzzle outcomes.
+
+Rooms opt into these with:
+
+```js
+hunter: { pos: [5.5, 5], patrol: [[5.5, 5], [5.5, -2.5]] },
+edits: { delete: 1, freeze: 0, reverse: 0, restart: 1 },
+corruption: [{ cycle: 2, at: 18.5, echo: 1, type: 'stare' }],
+```
 
 ## Project structure
 

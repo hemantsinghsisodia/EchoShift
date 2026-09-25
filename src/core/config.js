@@ -61,3 +61,15 @@ export const COLORS = {
   purple: 0xa55bff,
   cyan: 0x5fe3ff,
 };
+
+export const TIMELINE = {
+  sectionTicks: 2 * TICK_RATE,
+  cursorStepTicks: 0.5 * TICK_RATE,
+};
+
+export const TIMELINE_COST = {
+  delete: 5,
+  freeze: 3,
+  reverse: 6,
+  restart: 6,
+};

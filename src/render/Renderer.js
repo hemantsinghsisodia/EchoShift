@@ -13,7 +13,7 @@ export class Renderer {
   constructor(container) {
     this.touch = isTouchDevice();
     this.renderer = new THREE.WebGLRenderer({ antialias: false, powerPreference: 'high-performance', stencil: false });
-    this.pixelRatio = Math.min(window.devicePixelRatio || 1, 1.5);
+    this.pixelRatio = Math.min(window.devicePixelRatio || 1, this.touch ? 1.75 : 1.5);
     this.renderer.setPixelRatio(this.pixelRatio);
     this.renderer.setSize(window.innerWidth, window.innerHeight);
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
@@ -35,7 +35,7 @@ export class Renderer {
     this.camera.rotation.order = 'YXZ';
     this.scene.add(this.camera);
 
-    const target = new THREE.WebGLRenderTarget(window.innerWidth, window.innerHeight, { type: THREE.HalfFloatType, samples: this.touch ? 0 : 4 });
+    const target = new THREE.WebGLRenderTarget(window.innerWidth, window.innerHeight, { type: THREE.HalfFloatType, samples: 4 });
     this.composer = new EffectComposer(this.renderer, target);
     this.composer.setPixelRatio(this.pixelRatio);
     this.composer.setSize(window.innerWidth, window.innerHeight);

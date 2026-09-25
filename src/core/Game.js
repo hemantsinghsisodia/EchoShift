@@ -13,6 +13,7 @@ import { TICK_RATE } from './config.js';
 import { isPortrait } from './device.js';
 import { playerDeathNotice } from './playerDeathNotice.js';
 import { TouchControls } from '../ui/TouchControls.js';
+import { loadEchoModel } from '../render/EchoModel.js';
 
 const LOCK_FALLBACK_MS = 450;
 
@@ -22,6 +23,7 @@ const LOCK_FALLBACK_MS = 450;
  */
 export class Game {
   constructor(container) {
+    loadEchoModel();
     this.settings = loadSettings();
     this.bus = new EventBus();
     this.sim = new Simulation({ bus: this.bus });

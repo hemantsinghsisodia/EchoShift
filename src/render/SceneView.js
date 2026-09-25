@@ -227,6 +227,7 @@ export class SceneView {
       this.hunterViews[i]?.update(time, alpha);
     }
     this.syncEchoes(time, alpha, dt);
+    this.timelineGhost?.syncPreview();
     this.lightRig.update(time);
     this.particles.update(dt, time);
     const ending = this.sim.state === 'ending' || this.sim.state === 'escaped';
@@ -249,6 +250,7 @@ export class SceneView {
       sample.y + echo.offset.y,
       sample.z + echo.offset.z,
     );
+    this.timelineGhost.posePreview(sample);
   }
 
   clearTimelinePreview() {

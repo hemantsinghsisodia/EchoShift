@@ -99,7 +99,7 @@ src/
   puzzle/                 Logic expressions (all/any/not/count/sync/latch), Puzzle, Room, RoomManager, LabLayout
   objects/                PressurePlate, Switch, TimedButton, Door, MovingPlatform, Laser, EnergyNode, Trigger
   rooms/                  room01..room08 + escape chamber (declarative configs) and helpers
-  render/                 Renderer (bloom), SceneView, RoomBuilder (instanced geometry), ObjectViews, LightRig, LightCones, Particles, CameraShake, EndingFX
+  render/                 Renderer (bloom), SceneView, EchoModel (rigged character), RoomBuilder (instanced geometry), ObjectViews, LightRig, LightCones, Particles, CameraShake, EndingFX
   audio/                  AudioManager, MusicSequencer, Synth (procedural Web Audio)
   ui/                     UI (menus, HUD), Settings (localStorage), Tutorial
   debug/                  Autopilot, scripted solutions, DebugHooks
@@ -132,3 +132,7 @@ On the dev server, or on any build with `?debug=1` in the URL, `window.__echoDeb
 - `spawnEcho()` ends the current cycle immediately.
 
 `?debug=1` also shows an FPS and draw-call overlay.
+
+## Credits
+
+The Echo is the CC0 Animated Men character by [Quaternius](https://quaternius.com/packs/animatedmen.html) (`public/models/echo.glb`). CC0 does not require credit; this line is here so the source of the model is clear.

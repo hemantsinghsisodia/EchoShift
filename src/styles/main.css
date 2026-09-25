@@ -581,13 +581,15 @@ body.touch #touch-layer:not(.hidden) { display: block; }
 #touch-sprint { right: max(16px, env(safe-area-inset-right)); bottom: calc(max(16px, env(safe-area-inset-bottom)) + 72px); }
 #touch-swap { right: calc(max(16px, env(safe-area-inset-right)) + 72px); bottom: calc(max(16px, env(safe-area-inset-bottom)) + 72px); }
 #touch-edit { right: calc(max(16px, env(safe-area-inset-right)) + 134px); bottom: calc(max(16px, env(safe-area-inset-bottom)) + 72px); }
-#touch-pause, #touch-restart {
+#touch-buttons #touch-pause,
+#touch-buttons #touch-restart {
   top: max(10px, env(safe-area-inset-top));
   width: auto;
   height: 28px;
-  padding: 0 10px;
+  padding: 0 12px;
   border-radius: 14px;
   font-size: 10px;
+  white-space: nowrap;
 }
 
 /* Compact HUD: phones only. Desktop rules above stay as they are. */
@@ -637,9 +639,9 @@ body.touch .toast-body {
   overflow: hidden;
 }
 body.touch #tutorial {
-  left: 36%;
   bottom: 16px;
-  max-width: 44vw;
+  width: max-content;
+  max-width: 56vw;
   padding: 6px 12px;
   font-size: 11px;
   line-height: 1.35;

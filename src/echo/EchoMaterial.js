@@ -21,6 +21,7 @@ export function createEchoMaterial(hue = 0) {
       uCorrupt: { value: 0 },
     },
     vertexShader: /* glsl */ `
+      #include <skinning_pars_vertex>
       uniform float uTime;
       uniform float uSeed;
       uniform float uGlitch;
@@ -31,16 +32,23 @@ export function createEchoMaterial(hue = 0) {
       varying vec3 vW;
       float hash(float n) { return fract(sin(n) * 43758.5453); }
       void main() {
-        vec3 p = position;
-        float slice = floor((p.y + uTime * 0.5) * 9.0);
+        vec3 objectNormal = normal;
+        #include <skinbase_vertex>
+        #include <skinnormal_vertex>
+        vec3 transformed = position;
+        #include <skinning_vertex>
+        vec4 w = modelMatrix * vec4(transformed, 1.0);
+        vec3 wnRaw = mat3(modelMatrix) * objectNormal;
+        float wnLen = length(wnRaw);
+        vec3 wn = wnLen > 0.0001 ? wnRaw / wnLen : vec3(0.0, 1.0, 0.0);
+        float slice = floor((w.y + uTime * 0.5) * 9.0);
         float g = step(0.93 - uGlitch * 0.4, hash(slice + floor(uTime * 12.0) + uSeed));
         float live = 1.0 - uFrozen;
-        p.x += (hash(slice * 1.7 + floor(uTime * 20.0)) - 0.5) * 0.14 * g * live * (1.0 + uCorrupt * 5.0);
-        p += normal * sin(uTime * 7.0 + p.y * 12.0 + uSeed) * 0.006 * live;
-        vec4 w = modelMatrix * vec4(p, 1.0);
+        w.x += (hash(slice * 1.7 + floor(uTime * 20.0)) - 0.5) * 0.14 * g * live * (1.0 + uCorrupt * 5.0);
+        w.xyz += wn * sin(uTime * 7.0 + w.y * 12.0 + uSeed) * 0.006 * live;
         vW = w.xyz;
         vec4 mv = viewMatrix * w;
-        vN = normalize(normalMatrix * normal);
+        vN = normalize(mat3(viewMatrix) * wn);
         vV = normalize(-mv.xyz);
         gl_Position = projectionMatrix * mv;
       }
@@ -98,10 +106,20 @@ export function createOutlineMaterial(hue = 0) {
   return new THREE.ShaderMaterial({
     uniforms: { uColor: { value: c }, uOpacity: { value: 1 }, uTime: { value: 0 } },
     vertexShader: /* glsl */ `
+      #include <skinning_pars_vertex>
       uniform float uTime;
       void main() {
-        vec3 p = position + normal * (0.035 + 0.008 * sin(uTime * 9.0 + position.y * 8.0));
-        gl_Position = projectionMatrix * modelViewMatrix * vec4(p, 1.0);
+        vec3 objectNormal = normal;
+        #include <skinbase_vertex>
+        #include <skinnormal_vertex>
+        vec3 transformed = position;
+        #include <skinning_vertex>
+        vec4 w = modelMatrix * vec4(transformed, 1.0);
+        vec3 wnRaw = mat3(modelMatrix) * objectNormal;
+        float wnLen = length(wnRaw);
+        vec3 wn = wnLen > 0.0001 ? wnRaw / wnLen : vec3(0.0, 1.0, 0.0);
+        w.xyz += wn * (0.02 + 0.005 * sin(uTime * 9.0 + w.y * 8.0));
+        gl_Position = projectionMatrix * viewMatrix * w;
       }
     `,
     fragmentShader: /* glsl */ `

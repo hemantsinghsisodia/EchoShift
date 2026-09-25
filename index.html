@@ -1,0 +1,177 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ECHO SHIFT</title>
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='11' fill='none' stroke='%2346c8ff' stroke-width='3'/%3E%3Ccircle cx='16' cy='16' r='4' fill='%23b06bff'/%3E%3C/svg%3E" />
+    <link rel="stylesheet" href="/src/styles/main.css" />
+  </head>
+  <body>
+    <div id="app"></div>
+
+    <!-- In-game HUD -->
+    <div id="hud" class="hidden">
+      <div class="hud-top-left panel">
+        <div class="hud-title">ECHO SHIFT</div>
+        <div class="hud-room" id="hud-room">ROOM 01</div>
+        <div class="hud-room-name" id="hud-room-name">ECHO PRIMER</div>
+        <div class="hud-label">OBJECTIVE</div>
+        <div class="hud-objective" id="hud-objective">-</div>
+      </div>
+
+      <div class="hud-top-right panel">
+        <div class="hud-label">ECHO CYCLE</div>
+        <div class="cycle">
+          <svg class="cycle-ring" viewBox="0 0 100 100">
+            <circle class="ring-bg" cx="50" cy="50" r="42" />
+            <circle class="ring-fg" id="cycle-ring" cx="50" cy="50" r="42" />
+          </svg>
+          <div class="cycle-time" id="cycle-time">15.0<span>s</span></div>
+        </div>
+        <div class="hud-echoes">
+          <span class="hud-label">ECHOES</span>
+          <span id="hud-echo-count">0/2</span>
+        </div>
+        <div class="echo-pips" id="echo-pips"></div>
+      </div>
+
+      <div class="hud-bottom-left">
+        <span><b>R</b> RESTART ROOM</span>
+        <span><b>ESC</b> PAUSE</span>
+      </div>
+
+      <div id="crosshair"><i></i></div>
+      <div id="prompt" class="hidden"><b>E</b> <span id="prompt-text">ACTIVATE</span></div>
+      <div id="toast" class="hidden"><div class="toast-head" id="toast-head">ROOM 01</div><div class="toast-body" id="toast-body"></div></div>
+      <div id="tutorial" class="hidden"><div class="tut-step" id="tut-step">1/5</div><div id="tut-text"></div></div>
+      <div id="banner" class="hidden"></div>
+      <div id="debug-overlay" class="hidden"></div>
+    </div>
+
+    <div id="flash"></div>
+    <div id="fade"></div>
+
+    <!-- Main menu -->
+    <div id="menu" class="screen">
+      <div class="menu-bg-grid"></div>
+      <div class="menu-inner">
+        <div class="logo">
+          <div class="logo-main" data-text="ECHO SHIFT">ECHO SHIFT</div>
+          <div class="logo-sub">COOPERATE WITH YOUR PAST SELF</div>
+        </div>
+        <nav class="menu-buttons">
+          <button class="btn" data-action="play">PLAY</button>
+          <button class="btn" data-action="howto">HOW TO PLAY</button>
+          <button class="btn" data-action="settings">SETTINGS</button>
+        </nav>
+        <div class="menu-foot">SUBJECT 07 // TEMPORAL CONTAINMENT LAB // SECTOR E</div>
+      </div>
+    </div>
+
+    <!-- How to play -->
+    <div id="howto" class="screen hidden">
+      <div class="panel dialog">
+        <h2>HOW TO PLAY</h2>
+        <div class="howto-grid">
+          <div>
+            <h3>CONTROLS</h3>
+            <ul class="keys">
+              <li><b>W A S D</b> MOVE</li>
+              <li><b>MOUSE</b> LOOK</li>
+              <li><b>SHIFT</b> SPRINT</li>
+              <li><b>SPACE</b> JUMP</li>
+              <li><b>E</b> INTERACT</li>
+              <li><b>R</b> RESTART ROOM</li>
+              <li><b>ESC</b> PAUSE</li>
+            </ul>
+          </div>
+          <div>
+            <h3>THE ECHO</h3>
+            <p>Everything you do is recorded. Every <em>15 seconds</em> the recording freezes and an <em>Echo</em> of you appears where you stood when that cycle began, then repeats your exact movements and button presses.</p>
+            <p>When an Echo finishes its replay it <em>holds its final position</em>, keeping plates pressed for you.</p>
+            <p>Each room allows a limited number of Echoes. When a new one appears beyond the limit, the oldest one dissolves.</p>
+          </div>
+          <div>
+            <h3>VISUAL LANGUAGE</h3>
+            <ul class="legend">
+              <li><i class="c-blue"></i> INACTIVE</li>
+              <li><i class="c-green"></i> ACTIVATED</li>
+              <li><i class="c-red"></i> DANGER</li>
+              <li><i class="c-white"></i> OBJECTIVE</li>
+            </ul>
+            <p>Glowing floor lines show what powers what. Echoes are immune to lasers, but a door closing on one collapses it.</p>
+          </div>
+        </div>
+        <button class="btn small" data-action="back">BACK</button>
+      </div>
+    </div>
+
+    <!-- Settings -->
+    <div id="settings" class="screen hidden">
+      <div class="panel dialog narrow">
+        <h2>SETTINGS</h2>
+        <label class="slider">
+          <span>MASTER VOLUME</span>
+          <input type="range" id="set-master" min="0" max="1" step="0.01" />
+          <output id="out-master"></output>
+        </label>
+        <label class="slider">
+          <span>MUSIC VOLUME</span>
+          <input type="range" id="set-music" min="0" max="1" step="0.01" />
+          <output id="out-music"></output>
+        </label>
+        <label class="slider">
+          <span>MOUSE SENSITIVITY</span>
+          <input type="range" id="set-sens" min="0.2" max="3" step="0.05" />
+          <output id="out-sens"></output>
+        </label>
+        <button class="btn small" data-action="back">BACK</button>
+      </div>
+    </div>
+
+    <!-- Briefing (start tutorial) -->
+    <div id="briefing" class="screen hidden">
+      <div class="panel dialog narrow briefing">
+        <div class="hud-label">INCOMING TRANSMISSION</div>
+        <h2>WAKE UP, SUBJECT 07.</h2>
+        <p>The containment lab has locked down. Your chrono-suit is still <em>recording</em> you.</p>
+        <p>Every 15 seconds it projects an <em>Echo</em>: a hologram that repeats what you just did. Plates, switches and buttons respond to Echoes exactly as they do to you.</p>
+        <p>Work with your past selves. Charge each room's <em>energy node</em>. Get out.</p>
+        <button class="btn" data-action="begin">CLICK TO BEGIN</button>
+      </div>
+    </div>
+
+    <!-- Pause -->
+    <div id="pause" class="screen hidden">
+      <div class="panel dialog narrow">
+        <h2>PAUSED</h2>
+        <nav class="menu-buttons">
+          <button class="btn" data-action="resume">RESUME</button>
+          <button class="btn" data-action="restart-room">RESTART ROOM</button>
+          <button class="btn" data-action="settings">SETTINGS</button>
+          <button class="btn" data-action="quit">MAIN MENU</button>
+        </nav>
+      </div>
+    </div>
+
+    <!-- End screen -->
+    <div id="end" class="screen hidden">
+      <div class="panel dialog narrow end">
+        <div class="end-title">ESCAPE SUCCESSFUL</div>
+        <div class="end-sub">SUBJECT 07 HAS LEFT THE LOOP</div>
+        <div class="stats">
+          <div><span>TOTAL TIME</span><b id="stat-time">00:00</b></div>
+          <div><span>ECHOES CREATED</span><b id="stat-echoes">0</b></div>
+          <div><span>ROOMS COMPLETED</span><b id="stat-rooms">0/8</b></div>
+          <div><span>RESTARTS</span><b id="stat-restarts">0</b></div>
+        </div>
+        <button class="btn" data-action="again">PLAY AGAIN</button>
+      </div>
+    </div>
+
+    <div id="loading" class="screen"><div class="loading-text">INITIALISING LAB<span class="dots"></span></div></div>
+
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>

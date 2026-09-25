@@ -73,3 +73,16 @@ export const TIMELINE_COST = {
   reverse: 6,
   restart: 6,
 };
+
+export const HUNTER = {
+  speed: 2.2,
+  radius: 0.45,
+  height: 1.4,
+  echoHearingScale: 12,
+  playerWalkRange: 3,
+  playerSprintRange: 8,
+  targetLockTicks: TICK_RATE,
+  lostTargetTicks: 3 * TICK_RATE,
+  stuckTicks: 1.5 * TICK_RATE,
+  catchDistance: 0.8,
+};

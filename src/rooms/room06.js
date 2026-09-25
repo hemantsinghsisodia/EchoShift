@@ -1,4 +1,4 @@
-import { wallX } from './helpers.js';
+import { wallX, block } from './helpers.js';
 import { not } from '../puzzle/Logic.js';
 
 // Laser hazards. The trap: your Echo repeats the switch press and turns the alcove laser back on.
@@ -14,10 +14,20 @@ export default {
   exitX: 0,
   maxEchoes: 2,
   abilities: ['swap', 'freeze'],
+  hunter: {
+    pos: [5.5, 5],
+    patrol: [
+      [5.5, 5],
+      [5.5, -2.5],
+      [1.5, -3.2],
+      [-2.5, 2],
+    ],
+  },
   accent: 'purple',
+  blocks: [block(2, 0, 1, 6, 1.1, 2), block(2, 0, -2, 6, 1.1, -1)],
   walls: [...wallX(0, -10, -6), ...wallX(-5, -10, 10, [[0, 2.4]])],
   objects: [
-    { type: 'switch', id: 's2', mode: 'toggle', pos: [-3, 0, 5.5] },
+    { type: 'switch', id: 's2', mode: 'toggle', pos: [-3, 0, 6] },
     { type: 'plate', id: 'pA', pos: [-8, 0, -2.5] },
     { type: 'laser', id: 'l3', min: [-10, 0.22, 2.95], max: [10, 0.38, 3.05] },
     { type: 'laser', id: 'l2', min: [-6.05, 0, -5], max: [-5.95, 3.2, 0], activeWhen: not('s2') },

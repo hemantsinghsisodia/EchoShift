@@ -105,3 +105,21 @@ function runSteps(sim, steps, maxTicks) {
   for (let i = 0; i < maxTicks && !pilot.done; i++) sim.step(pilot.next());
   return { pilot, deaths };
 }
+
+it('room 6: without a noisy decoy the Hunter consumes the plate Echo', () => {
+  const sim = new Simulation();
+  sim.roomManager.begin(5);
+  const collapse = [];
+  sim.bus.on('echo:collapse', (event) => collapse.push(event.reason));
+  runSteps(sim, SOLUTIONS[5].slice(3), 60 * 60);
+  expect(collapse).toContain('hunted');
+  expect(sim.rooms[5].complete).toBe(false);
+});
+
+it('room 7: without Delete, Echo 3 misses the short alcove door', () => {
+  const sim = new Simulation();
+  sim.roomManager.begin(6);
+  const noDelete = SOLUTIONS[6].filter((step) => step.edit !== 'delete');
+  runSteps(sim, noDelete, 60 * 90);
+  expect(sim.rooms[6].complete).toBe(false);
+});

@@ -75,6 +75,14 @@ export class Autopilot {
     const sim = this.sim;
     const room = st.room;
 
+    if (step.edit) {
+      const echo = sim.timelineEdits.newestEcho();
+      if (!echo) return this.fail('no Echo to edit'), null;
+      const result = sim.timelineEdits.apply(echo, step.edit, Math.round(step.at * TICK_RATE));
+      if (!result.ok) this.fail(`edit failed: ${result.reason}`);
+      return null;
+    }
+
     if (step.goto) return this.steer(this.world(room, step.goto), step);
 
     if (step.jumpOver) {

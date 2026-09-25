@@ -6,6 +6,7 @@ import { Renderer } from '../render/Renderer.js';
 import { SceneView } from '../render/SceneView.js';
 import { AudioManager } from '../audio/AudioManager.js';
 import { UI } from '../ui/UI.js';
+import { TimelineEditor } from '../ui/TimelineEditor.js';
 import { Tutorial } from '../ui/Tutorial.js';
 import { loadSettings, saveSettings } from '../ui/Settings.js';
 import { TICK_RATE } from './config.js';
@@ -48,6 +49,18 @@ export class Game {
 
     this.input.handlers.restart = () => this.restartRoom();
     this.input.handlers.lockChange = (locked) => this.onLockChange(locked);
+    this.timelineEditor = new TimelineEditor(this.sim, { onClose: () => this.closeTimeline() });
+    this.input.handlers.keyDown = (code) => {
+      if (this.state === 'editing') {
+        this.timelineEditor.handleKey(code);
+        return true;
+      }
+      if (code === 'KeyT' && this.state === 'playing') {
+        this.openTimeline();
+        return true;
+      }
+      return false;
+    };
     this.renderer.canvas.addEventListener('click', () => {
       if (this.state === 'playing' && !this.input.locked) this.input.requestLock();
     });
@@ -121,6 +134,25 @@ export class Game {
     this.ui.show('pause');
   }
 
+  openTimeline() {
+    const result = this.sim.openTimeline();
+    if (!result.ok) {
+      this.bus.emit('ability:blocked', { ability: 'timeline', reason: result.reason });
+      return;
+    }
+    this.state = 'editing';
+    this.loop.simulating = false;
+    this.input.enabled = false;
+    this.input.exitLock();
+    this.timelineEditor.open(result.echo, result.remaining);
+    this.bus.emit('timeline:open', { echo: result.echo });
+  }
+
+  closeTimeline() {
+    if (this.state !== 'editing') return;
+    this.enterPlaying();
+  }
+
   toMenu() {
     this.input.exitLock();
     this.state = 'menu';
@@ -135,6 +167,7 @@ export class Game {
   }
 
   onLockChange(locked) {
+    if (this.state === 'editing') return;
     if (locked) {
       if (this.state === 'starting' || this.state === 'paused') this.setPlaying();
     } else if (this.state === 'playing' && !this.autopilot) {

@@ -12,7 +12,7 @@ export class Input {
     this.interactQueued = false;
     this.locked = false;
     this.enabled = false;
-    this.handlers = { restart: null, lockChange: null };
+    this.handlers = { restart: null, lockChange: null, keyDown: null };
 
     window.addEventListener('keydown', (e) => this.onKeyDown(e));
     window.addEventListener('keyup', (e) => this.keys.delete(e.code));
@@ -42,6 +42,10 @@ export class Input {
   }
 
   onKeyDown(e) {
+    if (this.handlers.keyDown?.(e.code)) {
+      e.preventDefault();
+      return;
+    }
     if (!this.enabled) return;
     if (['Space', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.code)) e.preventDefault();
     if (e.repeat) return;

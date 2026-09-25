@@ -36,6 +36,7 @@ export class UI {
       abilities: $('abilities'),
       ab_swap: $('ab-swap'),
       ab_freeze: $('ab-freeze'),
+      ab_timeline: $('ab-timeline'),
       paradox: $('paradox'),
       paradoxValue: $('paradox-value'),
     };
@@ -163,7 +164,8 @@ export class UI {
 
   updateAbilities(sim) {
     const ab = sim.abilities;
-    const any = ab.anyAllowed;
+    const timeline = !!sim.room?.cfg.edits;
+    const any = ab.anyAllowed || timeline;
     this.set('abVis', this.el.abilities, any ? 'abilities' : 'abilities hidden', 'className');
     if (!any) return;
     for (const name of ['swap', 'freeze']) {
@@ -174,6 +176,7 @@ export class UI {
       this.set(`abCool_${name}`, el, `ability${cd > 0 ? ' cooling' : ''}`, 'className');
       this.set(`abBar_${name}`, el.querySelector('.cd').style, `scaleX(${(1 - cd).toFixed(3)})`, 'transform');
     }
+    this.set('abShow_timeline', this.el.ab_timeline.style, timeline ? '' : 'none', 'display');
   }
 
   updateParadox(paradox) {

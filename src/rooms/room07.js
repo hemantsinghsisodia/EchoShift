@@ -14,6 +14,7 @@ export default {
   exitX: 0,
   maxEchoes: 4,
   abilities: ['swap', 'freeze'],
+  edits: { delete: 1, restart: 1 },
   accent: 'blue',
   walls: [
     ...wallZ(9, -7, -4),

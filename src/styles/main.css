@@ -472,3 +472,30 @@ input[type='range']::-moz-range-thumb { width: 12px; height: 12px; background: #
 .loading-text { letter-spacing: 0.5em; color: var(--blue); font-size: 14px; }
 .dots::after { content: ''; animation: dots 1.2s steps(4) infinite; }
 @keyframes dots { 0% { content: ''; } 25% { content: '.'; } 50% { content: '..'; } 75% { content: '...'; } }
+
+.timeline-editor {
+  position: fixed;
+  inset: 0;
+  z-index: 25;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding-bottom: 7vh;
+  background: linear-gradient(transparent 35%, rgba(1, 3, 12, 0.88));
+}
+.timeline-panel { width: min(860px, calc(100% - 48px)); padding: 24px 30px; }
+.timeline-head, .timeline-time { display: flex; justify-content: space-between; letter-spacing: 0.3em; }
+.timeline-head b { color: var(--purple); }
+.timeline-track { position: relative; height: 52px; margin: 24px 0 8px; border: 1px solid var(--glass-edge); background: rgba(3, 7, 18, 0.9); }
+.timeline-played { position: absolute; inset: 0 auto 0 0; background: rgba(95, 227, 255, 0.11); }
+.timeline-selection { position: absolute; inset: 4px auto 4px 0; width: 13.333%; background: rgba(176, 107, 255, 0.24); border: 1px solid var(--purple); }
+.timeline-cursor { position: absolute; top: -7px; bottom: -7px; width: 2px; background: white; box-shadow: 0 0 12px white; }
+.timeline-markers i { position: absolute; bottom: 6px; width: 6px; height: 12px; transform: translateX(-50%) skewX(-12deg); background: var(--blue); }
+.timeline-markers i.interact { background: var(--green); }
+.timeline-markers i.swap { background: var(--purple); }
+.timeline-ops { display: flex; gap: 10px; margin-top: 18px; }
+.timeline-op { padding: 8px 14px; opacity: 0.35; border: 1px solid var(--glass-edge); letter-spacing: 0.18em; }
+.timeline-op.allowed { opacity: 1; }
+.timeline-op.selected { border-color: white; box-shadow: 0 0 14px var(--blue); }
+.timeline-message { margin-top: 18px; text-align: center; color: rgba(200, 220, 255, 0.65); font-size: 11px; letter-spacing: 0.18em; }
+.timeline-message.error { color: var(--red); }

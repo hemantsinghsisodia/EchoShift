@@ -40,6 +40,7 @@
       <div id="abilities" class="abilities hidden">
         <div class="ability" id="ab-swap"><b>Q</b><span>SWAP</span><i class="cd"></i></div>
         <div class="ability" id="ab-freeze"><b>F</b><span>FREEZE</span><i class="cd"></i></div>
+        <div class="ability" id="ab-timeline"><b>T</b><span>EDIT</span></div>
       </div>
 
       <div class="hud-bottom-left">
@@ -53,6 +54,24 @@
       <div id="tutorial" class="hidden"><div class="tut-step" id="tut-step">1/5</div><div id="tut-text"></div></div>
       <div id="banner" class="hidden"></div>
       <div id="debug-overlay" class="hidden"></div>
+    </div>
+
+    <div id="timeline-editor" class="timeline-editor hidden">
+      <div class="panel timeline-panel">
+        <div class="timeline-head">
+          <span>TEMPORAL RECONSTRUCTION</span>
+          <b id="timeline-echo">ECHO 1</b>
+        </div>
+        <div id="timeline-track" class="timeline-track">
+          <div id="timeline-played" class="timeline-played"></div>
+          <div id="timeline-selection" class="timeline-selection"></div>
+          <div id="timeline-cursor" class="timeline-cursor"></div>
+          <div id="timeline-markers" class="timeline-markers"></div>
+        </div>
+        <div class="timeline-time"><span id="timeline-time">00.0s</span><span>SECTION 02.0s</span></div>
+        <div id="timeline-ops" class="timeline-ops"></div>
+        <div id="timeline-message" class="timeline-message">A/D SELECT TIME · 1-4 SELECT EDIT · ENTER APPLY · T CLOSE</div>
+      </div>
     </div>
 
     <div id="flash"></div>

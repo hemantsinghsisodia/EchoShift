@@ -221,4 +221,18 @@ describe('Timeline integration', () => {
 
     expect(registrations).toBe(1);
   });
+
+  it('consumes only the selected room edit and adds the exact Paradox cost', () => {
+    const sim = new Simulation();
+    sim.roomManager.begin(6);
+    const fake = {
+      isActivator: true,
+      timeline: new TimelineMap(900),
+    };
+    sim.echoes.echoes.push(fake);
+    expect(sim.timelineEdits.apply(fake, 'delete', 180)).toMatchObject({ ok: true });
+    expect(sim.timelineEdits.remaining.delete).toBe(sim.room.cfg.edits.delete - 1);
+    expect(sim.paradox.value).toBe(5);
+    expect(sim.timelineEdits.apply(fake, 'delete', 240)).toMatchObject({ ok: false, reason: 'NO EDITS LEFT' });
+  });
 });

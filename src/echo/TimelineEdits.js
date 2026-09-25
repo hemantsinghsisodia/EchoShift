@@ -41,7 +41,7 @@ export class TimelineMap {
     if (op) {
       op.used = true;
       if (op.type === 'delete') {
-        this.trackTick = op.end + 1;
+        this.trackTick = Math.min(this.lengthTicks, op.end + 1);
         return { previousTick, trackTick: this.trackTick, direction: 1, discontinuity: true };
       }
       if (op.type === 'freeze') {

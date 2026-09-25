@@ -12,6 +12,12 @@ describe('TimelineMap', () => {
     expect(states[120]).toMatchObject({ previousTick: 120, trackTick: 241, direction: 1, discontinuity: true });
   });
 
+  it('delete clamps its jump to the track end', () => {
+    const map = new TimelineMap(900, 900);
+    map.add('delete', 900, 900);
+    expect(map.advance()).toMatchObject({ previousTick: 900, trackTick: 900, direction: 1, discontinuity: true });
+  });
+
   it('freeze holds for 120 ticks and delays the rest', () => {
     const map = new TimelineMap(900);
     map.add('freeze', 120, 0);

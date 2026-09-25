@@ -16,11 +16,11 @@ export class Switch extends Console {
   }
 
   interact(actor, ctx) {
+    if (this.mode === 'breaker' && this.broken) return;
     const t = this.room.clock;
     this.lastPressTick = t;
     this.lastPressBy = actor.kind;
     if (this.mode === 'breaker') {
-      if (this.broken) return;
       if (this.on) {
         this.on = false;
         this.broken = true;

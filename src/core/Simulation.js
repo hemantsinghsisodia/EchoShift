@@ -20,8 +20,8 @@ import { ROOM_CONFIGS, PUZZLE_ROOM_COUNT } from '../rooms/index.js';
  * Headless, deterministic 60 Hz game simulation. No rendering or audio imports:
  * views subscribe to `bus` events and read state each frame.
  *
- * Tick order: platforms -> player -> interaction -> record -> echoes -> sensors -> logic
- *             -> actuators -> hazards -> triggers -> echo cycle.
+ * Tick order: platforms -> player -> interaction -> record -> echoes -> Hunter -> sensors
+ *             -> logic -> actuators -> hazards -> triggers -> echo cycle.
  */
 export class Simulation {
   constructor({ bus = new EventBus(), roomConfigs = ROOM_CONFIGS } = {}) {

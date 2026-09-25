@@ -102,14 +102,41 @@ describe('puzzle objects', () => {
     expect(breaker.signal).toBe(false);
     expect(breaker.broken).toBe(true);
 
-    breaker.interact(actor(0, 0), ctx);
-    tick(room);
-    expect(breaker.signal).toBe(false);
-
     room.reset();
     expect(breaker.on).toBe(false);
     expect(breaker.signal).toBe(false);
     expect(breaker.broken).toBe(false);
+  });
+
+  it('keeps a broken breaker fully inert on later presses', () => {
+    const room = new Room(cfg, 1, { x: 0, z: 0 });
+    const breaker = room.byId.br;
+    const presses = [];
+    const ctx = { bus: { emit: (type) => presses.push(type) } };
+    breaker.interact(actor(0, 0), ctx);
+    tick(room);
+    breaker.interact(actor(0, 0), ctx);
+    tick(room);
+    const brokenState = {
+      lastPressTick: breaker.lastPressTick,
+      lastPressBy: breaker.lastPressBy,
+      on: breaker.on,
+      broken: breaker.broken,
+      signal: breaker.signal,
+    };
+
+    breaker.interact({ ...actor(0, 0), kind: 'echo' }, ctx);
+    tick(room);
+
+    expect({
+      lastPressTick: breaker.lastPressTick,
+      lastPressBy: breaker.lastPressBy,
+      on: breaker.on,
+      broken: breaker.broken,
+      signal: breaker.signal,
+    }).toEqual(brokenState);
+    expect(breaker.signal).toBe(false);
+    expect(presses).toEqual(['switch:press', 'switch:press']);
   });
 
   it('laser kills only when active and overlapping', () => {

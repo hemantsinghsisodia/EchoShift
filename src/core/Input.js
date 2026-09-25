@@ -42,13 +42,16 @@ export class Input {
   }
 
   onKeyDown(e) {
+    if (e.repeat) {
+      if (this.enabled && ['Space', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.code)) e.preventDefault();
+      return;
+    }
     if (this.handlers.keyDown?.(e.code)) {
       e.preventDefault();
       return;
     }
     if (!this.enabled) return;
     if (['Space', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.code)) e.preventDefault();
-    if (e.repeat) return;
     this.keys.add(e.code);
     if (e.code === 'Space') this.jumpAt = performance.now();
     if (e.code === 'KeyE') this.interactQueued = true;

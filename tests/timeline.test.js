@@ -232,6 +232,7 @@ describe('Timeline integration', () => {
     sim.echoes.echoes.push(fake);
     expect(sim.timelineEdits.apply(fake, 'delete', 180)).toMatchObject({ ok: true });
     expect(sim.timelineEdits.remaining.delete).toBe(sim.room.cfg.edits.delete - 1);
+    expect(sim.timelineEdits.remaining.restart).toBe(1);
     expect(sim.paradox.value).toBe(5);
     expect(sim.timelineEdits.apply(fake, 'delete', 240)).toMatchObject({ ok: false, reason: 'NO EDITS LEFT' });
   });

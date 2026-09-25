@@ -2,6 +2,7 @@ import { CYCLE_TICKS, TIMELINE, TICK_RATE } from '../core/config.js';
 import { EDIT_TYPES } from '../echo/TimelineEdits.js';
 
 const $ = (id) => document.getElementById(id);
+const HELP = 'A/D SELECT TIME · 1-4 SELECT EDIT · ENTER APPLY · T CLOSE';
 
 export class TimelineEditor {
   constructor(sim, { onClose } = {}) {
@@ -18,9 +19,13 @@ export class TimelineEditor {
     this.echo = echo;
     this.remaining = { ...remaining };
     this.cursorTick = Math.ceil(echo.timeline.trackTick / TIMELINE.cursorStepTicks) * TIMELINE.cursorStepTicks;
+    this.cursorTick = Math.max(0, Math.min(CYCLE_TICKS - TIMELINE.sectionTicks, this.cursorTick));
     this.selected = EDIT_TYPES.find((type) => (this.remaining[type] ?? 0) > 0) ?? 'delete';
     this.isOpen = true;
     this.root.classList.remove('hidden');
+    const message = $('timeline-message');
+    message.textContent = HELP;
+    message.classList.remove('error');
     this.render();
   }
 

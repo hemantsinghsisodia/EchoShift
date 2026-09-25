@@ -1,3 +1,4 @@
+import './styles/main.css';
 import { Game } from './core/Game.js';
 import { attachDebugHooks } from './debug/DebugHooks.js';
 

@@ -74,6 +74,15 @@ export const TIMELINE_COST = {
   restart: 6,
 };
 
+export const CORRUPTION = {
+  baseChance: 0.02,
+  paradoxChance: 0.003,
+  stareTicks: 1.5 * TICK_RATE,
+  pauseTicks: 0.5 * TICK_RATE,
+  earlyTicks: TICK_RATE,
+  visualTicks: 0.75 * TICK_RATE,
+};
+
 export const HUNTER = {
   speed: 2.2,
   radius: 0.45,

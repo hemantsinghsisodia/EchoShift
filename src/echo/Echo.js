@@ -35,6 +35,12 @@ export class Echo {
     this.strideAcc = 0;
     this.offset = v3();
     this.frozenTicks = 0;
+    this.stareTicks = 0;
+    this.stareYaw = 0;
+    this.corruptPauseTicks = 0;
+    this.ghostPauseTicks = 0;
+    this.visualGlitch = null;
+    this.randomGlitch = null;
     this.lastSwapTick = -Infinity;
     this.sampleOut = { x: 0, y: 0, z: 0, yaw: 0, pitch: 0, flags: 0 };
     this.applySample(0, platforms);
@@ -134,6 +140,13 @@ export class Echo {
       if (this.collapseAge >= ECHO_COLLAPSE_TICKS) this.dead = true;
       return;
     }
+    if (this.corruptPauseTicks > 0) {
+      this.corruptPauseTicks--;
+      return;
+    }
+    if (this.stareTicks > 0) this.stareTicks--;
+    if (this.ghostPauseTicks > 0) this.ghostPauseTicks--;
+    if (this.visualGlitch && --this.visualGlitch.ticks <= 0) this.visualGlitch = null;
     const last = this.track.lastTick;
     if (this.frozenTicks > 0) {
       this.frozenTicks--;

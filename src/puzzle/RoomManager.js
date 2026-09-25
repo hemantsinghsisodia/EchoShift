@@ -52,6 +52,7 @@ export class RoomManager {
     sim.abilities?.reset();
     sim.timelineEdits?.reset();
     sim.resonance?.reset();
+    sim.corruption?.reset();
     sim.cycleTick = 0;
     sim.cycleIndex = 0;
     room.hunter?.reset();

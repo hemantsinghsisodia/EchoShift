@@ -11,6 +11,7 @@ import { EchoRecorder } from '../echo/EchoRecorder.js';
 import { EchoManager } from '../echo/EchoManager.js';
 import { EchoAbilities } from '../echo/EchoAbilities.js';
 import { TimelineEdits } from '../echo/TimelineEdits.js';
+import { Corruption } from '../echo/Corruption.js';
 import { Resonance } from '../hunter/Resonance.js';
 import { Paradox } from './Paradox.js';
 import { ABILITIES, PARADOX_COST } from './config.js';
@@ -50,8 +51,10 @@ export class Simulation {
     this.abilities = new EchoAbilities(this);
     this.timelineEdits = new TimelineEdits(this);
     this.resonance = new Resonance();
+    this.corruption = new Corruption(this);
     this.cycleIndex = 0;
     bus.on('echo:spawn', ({ echo }) => this.resonance.register(echo));
+    bus.on('echo:spawn', ({ echo }) => this.corruption.onEchoSpawn(echo));
     bus.on('echo:collapse', ({ reason }) => {
       if (reason === 'paradox') this.paradox.add(PARADOX_COST.collapse, 'collapse');
     });
@@ -143,6 +146,7 @@ export class Simulation {
     this.echoCtx.platforms = room.platforms;
     this.echoCtx.doors = room.doors;
     this.echoes.update(this.echoCtx);
+    this.corruption.update();
 
     const hunter = room.hunter;
     if (hunter) {

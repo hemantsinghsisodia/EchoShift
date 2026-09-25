@@ -21,6 +21,11 @@ export class LightRig {
     this.power = 1;
     this.emergency = 0;
     this.baseIntensity = 18;
+    this.lastTime = 0;
+  }
+
+  flicker(seconds = 0.3) {
+    this.flickerUntil = this.lastTime + seconds;
   }
 
   assign(currentInfo, nextInfo) {
@@ -42,6 +47,8 @@ export class LightRig {
   }
 
   update(time) {
+    this.lastTime = time;
+    const glitch = time < (this.flickerUntil ?? 0) ? (Math.sin(time * 110) > 0.15 ? 1 : 0.1) : 1;
     const red = new THREE.Color(1, 0.06, 0.08);
     for (let i = 0; i < this.lights.length; i++) {
       const s = this.lights[i];
@@ -53,6 +60,7 @@ export class LightRig {
         s.light.color.lerp(red, this.emergency);
         intensity = THREE.MathUtils.lerp(intensity, s.base * 0.9 * pulse * pulse + 3, this.emergency);
       }
+      intensity *= glitch;
       s.light.intensity = intensity;
     }
     this.hemi.intensity = 0.9 * Math.max(0.12, this.power) * (1 - 0.6 * this.emergency);

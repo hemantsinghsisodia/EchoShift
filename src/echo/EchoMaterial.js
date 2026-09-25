@@ -18,12 +18,14 @@ export function createEchoMaterial(hue = 0) {
       uGlitch: { value: 0 },
       uFrozen: { value: 0 },
       uFlash: { value: 0 },
+      uCorrupt: { value: 0 },
     },
     vertexShader: /* glsl */ `
       uniform float uTime;
       uniform float uSeed;
       uniform float uGlitch;
       uniform float uFrozen;
+      uniform float uCorrupt;
       varying vec3 vN;
       varying vec3 vV;
       varying vec3 vW;
@@ -33,7 +35,7 @@ export function createEchoMaterial(hue = 0) {
         float slice = floor((p.y + uTime * 0.5) * 9.0);
         float g = step(0.93 - uGlitch * 0.4, hash(slice + floor(uTime * 12.0) + uSeed));
         float live = 1.0 - uFrozen;
-        p.x += (hash(slice * 1.7 + floor(uTime * 20.0)) - 0.5) * 0.14 * g * live;
+        p.x += (hash(slice * 1.7 + floor(uTime * 20.0)) - 0.5) * 0.14 * g * live * (1.0 + uCorrupt * 5.0);
         p += normal * sin(uTime * 7.0 + p.y * 12.0 + uSeed) * 0.006 * live;
         vec4 w = modelMatrix * vec4(p, 1.0);
         vW = w.xyz;
@@ -52,6 +54,7 @@ export function createEchoMaterial(hue = 0) {
       uniform float uIntensity;
       uniform float uFrozen;
       uniform float uFlash;
+      uniform float uCorrupt;
       varying vec3 vN;
       varying vec3 vV;
       varying vec3 vW;
@@ -75,6 +78,9 @@ export function createEchoMaterial(hue = 0) {
         float crack = smoothstep(0.46, 0.5, max(max(facets.x, facets.y), facets.z));
         vec3 ice = vec3(0.75, 0.95, 1.0) * (0.35 + fres * 2.2 + crack * 1.6);
         col = mix(col, ice, uFrozen) + vec3(0.6, 0.9, 1.0) * uFlash * 3.0;
+        float corruptBand = step(0.78, fract(vW.y * 3.0 + uTime * 2.0));
+        col += vec3(uCorrupt * corruptBand * 1.5, 0.0, uCorrupt * (1.0 - corruptBand));
+        col *= 1.0 + uCorrupt * (0.4 + 0.6 * sin(uTime * 80.0 + vW.y * 20.0));
         flicker = mix(flicker, 1.0, uFrozen);
         float a = (0.22 + 0.25 * scan + fres * 0.9 + edge + uFlash) * flicker;
         gl_FragColor = vec4(col * uIntensity * a, a);

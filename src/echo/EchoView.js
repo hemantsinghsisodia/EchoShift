@@ -84,11 +84,16 @@ export class EchoView {
     const x = e.prevPos.x + (e.pos.x - e.prevPos.x) * alpha;
     const y = e.prevPos.y + (e.pos.y - e.prevPos.y) * alpha;
     const z = e.prevPos.z + (e.pos.z - e.prevPos.z) * alpha;
-    this.group.position.set(x, y, z);
+    if (e.ghostPauseTicks === 0) {
+      this.group.position.set(x, y, z);
+    }
     let d = e.yaw - this.yaw;
     d = Math.atan2(Math.sin(d), Math.cos(d));
     this.yaw += d * Math.min(1, dt * 20);
     this.body.rotation.y = this.yaw;
+    if (e.stareTicks > 0) {
+      this.body.rotation.y = Math.atan2(-(camera.position.x - x), -(camera.position.z - z));
+    }
     this.head.rotation.x = e.pitch * 0.6;
 
     const speed = Math.hypot(x - this.lastPos.x, z - this.lastPos.z) / Math.max(dt, 1e-4);
@@ -128,6 +133,8 @@ export class EchoView {
     u.uGlitch.value = glitch * (1 - this.frozenK);
     u.uFrozen.value = this.frozenK;
     u.uFlash.value = this.flash;
+    const corrupt = e.visualGlitch ? 1 : e.stareTicks > 0 || e.ghostPauseTicks > 0 ? 0.55 : 0;
+    u.uCorrupt.value += (corrupt - u.uCorrupt.value) * Math.min(1, dt * 16);
     this.outline.uniforms.uTime.value = this.localTime;
     this.outline.uniforms.uColor.value.copy(this.outlineBase).lerp(this.outlineIce, this.frozenK);
     this.outline.uniforms.uOpacity.value = 0.55 * dissolve * (0.85 + 0.15 * Math.sin(time * 17 + e.serial));

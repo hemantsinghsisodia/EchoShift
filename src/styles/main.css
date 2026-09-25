@@ -499,3 +499,17 @@ input[type='range']::-moz-range-thumb { width: 12px; height: 12px; background: #
 .timeline-op.selected { border-color: white; box-shadow: 0 0 14px var(--blue); }
 .timeline-message { margin-top: 18px; text-align: center; color: rgba(200, 220, 255, 0.65); font-size: 11px; letter-spacing: 0.18em; }
 .timeline-message.error { color: var(--red); }
+
+body.corrupt #app canvas {
+  filter: contrast(1.25) saturate(1.5) hue-rotate(8deg);
+  transform: translateX(2px) skewX(0.15deg);
+}
+body.corrupt::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  pointer-events: none;
+  background: repeating-linear-gradient(0deg, transparent 0 3px, rgba(176,107,255,.08) 3px 4px);
+  mix-blend-mode: screen;
+}

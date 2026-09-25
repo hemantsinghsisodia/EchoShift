@@ -9,6 +9,7 @@ import { CameraShake } from './CameraShake.js';
 import { EndingFX } from './EndingFX.js';
 import { createObjectView, createWireView, createNodeConeMaterials } from './ObjectViews.js';
 import { EchoView } from '../echo/EchoView.js';
+import { HunterView } from './HunterView.js';
 import { FLAG_WALKING } from '../player/Player.js';
 
 /**
@@ -32,6 +33,7 @@ export class SceneView {
 
     this.roomGroups = [];
     this.views = [];
+    this.hunterViews = [];
     for (const room of sim.rooms) {
       const g = new THREE.Group();
       const roomViews = [];
@@ -45,6 +47,12 @@ export class SceneView {
       const wires = createWireView(room, ctx);
       g.add(wires.group);
       roomViews.push(wires);
+      let hunterView = null;
+      if (room.hunter) {
+        hunterView = new HunterView(room.hunter, ctx);
+        g.add(hunterView.group);
+      }
+      this.hunterViews.push(hunterView);
       this.scene.add(g);
       this.roomGroups.push(g);
       this.views.push(roomViews);
@@ -216,6 +224,7 @@ export class SceneView {
     const cur = this.visibleRoom;
     for (let i = Math.max(0, cur - 1); i <= Math.min(this.views.length - 1, cur + 1); i++) {
       for (const v of this.views[i]) v.update(time, alpha, dt);
+      this.hunterViews[i]?.update(time, alpha);
     }
     this.syncEchoes(time, alpha, dt);
     this.lightRig.update(time);
@@ -224,5 +233,28 @@ export class SceneView {
     this.endingFx.update(dt, time, ending ? this.sim.endingTick / TICK_RATE : null);
     this.lab.pitMat.uniforms.uTime.value = time;
     this.renderer.render();
+  }
+
+  setTimelinePreview(echo, trackTick) {
+    if (!this.timelineGhost) {
+      this.timelineGhost = new EchoView(echo, this.geos);
+      this.timelineGhost.group.traverse((node) => {
+        if (node.material?.uniforms?.uIntensity) node.material.uniforms.uIntensity.value = 0.35;
+      });
+      this.scene.add(this.timelineGhost.group);
+    }
+    const sample = echo.track.sample(trackTick, { i: 0 }, this.sim.room.platforms, {});
+    this.timelineGhost.group.position.set(
+      sample.x + echo.offset.x,
+      sample.y + echo.offset.y,
+      sample.z + echo.offset.z,
+    );
+  }
+
+  clearTimelinePreview() {
+    if (!this.timelineGhost) return;
+    this.scene.remove(this.timelineGhost.group);
+    this.timelineGhost.dispose();
+    this.timelineGhost = null;
   }
 }

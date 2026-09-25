@@ -49,7 +49,10 @@ export class Game {
 
     this.input.handlers.restart = () => this.restartRoom();
     this.input.handlers.lockChange = (locked) => this.onLockChange(locked);
-    this.timelineEditor = new TimelineEditor(this.sim, { onClose: () => this.closeTimeline() });
+    this.timelineEditor = new TimelineEditor(this.sim, {
+      onClose: () => this.closeTimeline(),
+      onPreview: (echo, cursorTick) => this.view.setTimelinePreview(echo, cursorTick),
+    });
     this.input.handlers.keyDown = (code) => {
       if (this.state === 'editing') {
         this.timelineEditor.handleKey(code);
@@ -150,6 +153,7 @@ export class Game {
 
   closeTimeline() {
     if (this.state !== 'editing') return;
+    this.view.clearTimelinePreview();
     this.enterPlaying();
   }
 
@@ -328,6 +332,16 @@ export class Game {
     bus.on('game:new', () => {
       a.setMusicMode('ambient');
       ui.setRoom(this.sim.room);
+    });
+    bus.on('hunter:alert', ({ hunter }) => a.play('hunterAlert', { pos: hunter.pos }));
+    bus.on('hunter:strike', ({ pos }) => a.play('hunterStrike', { pos }));
+    bus.on('timeline:open', () => a.play('editorOpen'));
+    bus.on('timeline:edit', () => a.play('edit'));
+    bus.on('echo:corrupt', () => {
+      a.play('crackle');
+      document.body.classList.add('corrupt');
+      this.view.lightRig.flicker(0.3);
+      setTimeout(() => document.body.classList.remove('corrupt'), 300);
     });
   }
 }

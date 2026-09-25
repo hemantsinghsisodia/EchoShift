@@ -272,4 +272,26 @@ const SOUNDS = {
     const o = a.out(null, 0.7);
     tone(ctx, o, t, { type: 'triangle', freq: 900, freqEnd: 600, release: 0.08, peak: 0.12 });
   },
+  hunterAlert(a, ctx, t, { pos }) {
+    const o = a.out(pos, 1);
+    tone(ctx, o, t, { type: 'sawtooth', freq: 110, freqEnd: 330, attack: 0.01, hold: 0.2, release: 0.45, peak: 0.1 });
+    fm(ctx, o, t + 0.08, { carrier: 440, carrierEnd: 880, ratio: 1.5, index: 500, attack: 0.01, release: 0.35, peak: 0.07 });
+  },
+  hunterStrike(a, ctx, t, { pos }) {
+    const o = a.out(pos, 1.2);
+    noise(ctx, o, a.noiseBuf, t, { filter: 'lowpass', freq: 1800, freqEnd: 120, release: 0.5, peak: 0.35 });
+    tone(ctx, o, t, { type: 'square', freq: 95, freqEnd: 35, release: 0.45, peak: 0.25 });
+  },
+  editorOpen(a, ctx, t) {
+    const o = a.out(null, 0.8);
+    [220, 330, 440, 660].forEach((freq, i) => tone(ctx, o, t + i * 0.03, { type: 'sine', freq, release: 0.35, peak: 0.04 }));
+  },
+  edit(a, ctx, t) {
+    const o = a.out(null, 0.8);
+    fm(ctx, o, t, { carrier: 660, carrierEnd: 220, ratio: 2, index: 350, attack: 0.005, release: 0.35, peak: 0.08 });
+  },
+  crackle(a, ctx, t) {
+    const o = a.out(null, 0.9);
+    for (let i = 0; i < 8; i++) noise(ctx, o, a.noiseBuf, t + i * 0.025, { filter: 'bandpass', freq: 800 + i * 500, q: 8, release: 0.025, peak: 0.06 });
+  },
 };

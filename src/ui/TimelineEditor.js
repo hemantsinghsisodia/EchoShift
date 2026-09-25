@@ -5,9 +5,10 @@ const $ = (id) => document.getElementById(id);
 const HELP = 'A/D SELECT TIME · 1-4 SELECT EDIT · ENTER APPLY · T CLOSE';
 
 export class TimelineEditor {
-  constructor(sim, { onClose } = {}) {
+  constructor(sim, { onClose, onPreview } = {}) {
     this.sim = sim;
     this.onClose = onClose;
+    this.onPreview = onPreview;
     this.root = $('timeline-editor');
     this.isOpen = false;
     this.cursorTick = 0;
@@ -66,5 +67,6 @@ export class TimelineEditor {
       const count = this.remaining[type] ?? 0;
       return `<div class="timeline-op ${count ? 'allowed' : ''} ${type === this.selected ? 'selected' : ''}">${index + 1} ${type.toUpperCase()} ×${count}</div>`;
     }).join('');
+    this.onPreview?.(this.echo, this.cursorTick);
   }
 }

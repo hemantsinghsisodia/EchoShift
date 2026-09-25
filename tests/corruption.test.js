@@ -13,6 +13,7 @@ function fakeEcho(overrides = {}) {
     serial: 1,
     isActivator: true,
     age: 0,
+    pos: { x: 0, y: 0, z: 0 },
     yaw: 0.75,
     corruptPauseTicks: 0,
     ghostPauseTicks: 0,
@@ -37,6 +38,7 @@ function fakeSim(options = {}) {
     room,
     cycleIndex: options.cycleIndex ?? 0,
     paradox: { value: options.paradox ?? 0 },
+    player: { pos: options.playerPos ?? { x: 10, y: 0, z: 0 } },
     echoes: { echoes: options.echoes ?? [] },
     replayEvent: options.onEvent ?? (() => {}),
     bus: { emit: (type, payload) => emitted.push({ type, payload }) },
@@ -102,7 +104,8 @@ describe('deterministic random corruption', () => {
       corruption.apply(echo, { type, duration: 12 }, false);
 
       expect(echo.corruptPauseTicks).toBe(0);
-      expect(echo.yaw).toBe(0.75);
+      if (type === 'stare') expect(echo.stareYaw).not.toBe(echo.yaw);
+      else expect(echo.yaw).toBe(0.75);
     }
     expect(replayed).toEqual([]);
   });
@@ -186,7 +189,60 @@ describe('authored corruption', () => {
     expect(replayed).toEqual(['breaker', 'breaker']);
   });
 
-  it('advances an early Echo from its configured spawn offset and skips earlier events', () => {
+  it('faces the player for exactly 90 replay ticks, then restores recorded yaw', () => {
+    const track = makeTrack(180, [
+      { tick: 30, type: 'jump' },
+      { tick: 60, type: 'interact', targetId: 'switch' },
+      { tick: 90, type: 'jump' },
+    ]);
+    const echo = new Echo(track, 1, []);
+    const control = new Echo(track, 2, []);
+    const sim = fakeSim({ playerPos: { x: 10, y: 0, z: 0 }, echoes: [echo] });
+    const corruption = new Corruption(sim, 1);
+    const echoEvents = [];
+    const controlEvents = [];
+
+    corruption.apply(echo, { type: 'stare' }, true);
+
+    expect(echo.stareTicks).toBe(90);
+    expect(echo.stareYaw).toBeCloseTo(-Math.PI / 2);
+    for (let tick = 0; tick < 90; tick++) {
+      echo.update({ platforms: [], onEvent: (_echo, event) => echoEvents.push(event) });
+      control.update({ platforms: [], onEvent: (_echo, event) => controlEvents.push(event) });
+      expect(echo.yaw).toBeCloseTo(-Math.PI / 2);
+      expect(echo.pos).toEqual(control.pos);
+      expect(echo.replayTick).toBe(control.replayTick);
+    }
+
+    expect(echo.stareTicks).toBe(0);
+    expect(echoEvents).toEqual(controlEvents);
+    expect(echo.corruptPauseTicks).toBe(0);
+
+    echo.update({ platforms: [] });
+    control.update({ platforms: [] });
+    expect(echo.yaw).toBe(0);
+    expect(echo.pos).toEqual(control.pos);
+    expect(echo.replayTick).toBe(control.replayTick);
+  });
+
+  it('overrides facing while phase-1 Freeze holds the replay sample', () => {
+    const echo = new Echo(makeTrack(), 1, []);
+    const sim = fakeSim({ playerPos: { x: 10, y: 0, z: 0 }, echoes: [echo] });
+    const corruption = new Corruption(sim, 1);
+    const startPos = { ...echo.pos };
+    echo.freeze(2);
+    corruption.apply(echo, { type: 'stare' }, true);
+
+    echo.update({ platforms: [] });
+
+    expect(echo.replayTick).toBe(0);
+    expect(echo.pos).toEqual(startPos);
+    expect(echo.yaw).toBeCloseTo(-Math.PI / 2);
+    expect(echo.frozenTicks).toBe(1);
+    expect(echo.stareTicks).toBe(89);
+  });
+
+  it('seeks an early Echo to absolute tick 60 and skips events through the destination', () => {
     const bus = new EventBus();
     const sim = fakeSim({
       cycleIndex: 2,
@@ -198,15 +254,15 @@ describe('authored corruption', () => {
     bus.on('echo:spawn', ({ echo }) => corruption.onEchoSpawn(echo));
     const track = makeTrack(180, [
       { tick: 20, type: 'interact', targetId: 'before-spawn' },
-      { tick: 80, type: 'interact', targetId: 'at-early-start' },
-      { tick: 81, type: 'interact', targetId: 'after-early-start' },
+      { tick: 60, type: 'interact', targetId: 'at-early-start' },
+      { tick: 61, type: 'interact', targetId: 'after-early-start' },
     ]);
     const echo = manager.spawn(track, 2, [], { startAt: 20 });
     const replayed = [];
     const ctx = { platforms: [], onEvent: (_echo, event) => replayed.push(event.targetId) };
 
     echo.update(ctx);
-    expect(echo.replayTick).toBe(20 + CORRUPTION.earlyTicks);
+    expect(echo.replayTick).toBe(CORRUPTION.earlyTicks);
     expect(replayed).toEqual([]);
 
     echo.update(ctx);

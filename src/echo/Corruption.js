@@ -1,4 +1,5 @@
 import { CORRUPTION, TICK_RATE } from '../core/config.js';
+import { yawTo } from '../math/vec.js';
 
 const VISUAL_TYPES = Object.freeze(['jitter', 'flicker', 'stare', 'ghostPause']);
 
@@ -51,10 +52,7 @@ export class Corruption {
         && event.echo === echo.serial,
     );
     if (early) {
-      const startTick = Math.min(
-        echo.track.lengthTicks,
-        echo.timeline.trackTick + CORRUPTION.earlyTicks,
-      );
+      const startTick = Math.min(echo.track.lengthTicks, CORRUPTION.earlyTicks);
       echo.restartFrom(startTick);
     }
     echo.randomGlitch = this.rollRandom(echo.serial);
@@ -64,6 +62,12 @@ export class Corruption {
     if (!authored && !VISUAL_TYPES.includes(event.type)) return;
     if (event.type === 'stare') {
       echo.stareTicks = authored ? CORRUPTION.stareTicks : event.duration;
+      echo.stareYaw = yawTo(
+        echo.pos.x,
+        echo.pos.z,
+        this.sim.player.pos.x,
+        this.sim.player.pos.z,
+      );
     }
     if (event.type === 'pause') echo.corruptPauseTicks = CORRUPTION.pauseTicks;
     if (event.type === 'repeat' && echo.lastInteractionEvent) {

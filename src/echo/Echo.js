@@ -119,6 +119,7 @@ export class Echo {
     this.yaw = s.yaw;
     this.pitch = s.pitch;
     this.flags = s.flags;
+    if (this.stareTicks > 0) this.yaw = this.stareYaw;
   }
 
   collapse(reason) {
@@ -144,13 +145,13 @@ export class Echo {
       this.corruptPauseTicks--;
       return;
     }
-    if (this.stareTicks > 0) this.stareTicks--;
     if (this.ghostPauseTicks > 0) this.ghostPauseTicks--;
     if (this.visualGlitch && --this.visualGlitch.ticks <= 0) this.visualGlitch = null;
     const last = this.track.lastTick;
     if (this.frozenTicks > 0) {
       this.frozenTicks--;
       this.applySample(Math.min(this.replayTick, last), ctx.platforms);
+      if (this.stareTicks > 0) this.stareTicks--;
       if (this.frozenTicks === 0) ctx.onUnfreeze?.(this);
       return;
     }
@@ -168,6 +169,7 @@ export class Echo {
     } else {
       this.applySample(this.replayTick, ctx.platforms);
     }
+    if (this.stareTicks > 0) this.stareTicks--;
 
     if (this.state !== 'holding' && this.replayTick >= last) this.state = 'holding';
 

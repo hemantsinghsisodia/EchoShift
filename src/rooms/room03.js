@@ -4,8 +4,15 @@ import { wallX } from './helpers.js';
 export default {
   id: 3,
   name: 'THRESHOLD',
-  objective: 'Get past the laser grid and charge the node.',
-  hint: 'Press Q while aiming at an Echo to swap places. Swap trades places, and your Echo\'s whole future moves with it.',
+  objective: 'Send your Echo through the laser grid, then swap into it.',
+  hint: 'Lasers cannot hurt Echoes. When you swap (Q), you trade places, and the rest of the Echo\'s path shifts by the same distance.',
+  steps: [
+    'Cycle 1: walk straight toward the laser grid and stop just in front of it. Wait for the cycle to end.',
+    'Cycle 2: Echo 1 repeats that walk from the entrance. Stand a few steps ahead of it, between it and the grid.',
+    'Aim at the Echo and press Q. Its walk now ends past the grid, so it walks through the laser.',
+    'When it is fully past the beam and Q has recharged, press Q again. A swap is blocked while the Echo stands in the beam.',
+    'Charge the node.',
+  ],
   w: 20,
   d: 14,
   h: 5,

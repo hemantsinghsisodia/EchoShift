@@ -67,10 +67,18 @@ export class Game {
         this.openTimeline();
         return true;
       }
+      if (code === 'KeyH' && this.state === 'playing') {
+        this.ui.cycleGuide();
+        return true;
+      }
       return false;
     };
     this.touch = this.input.touch
-      ? new TouchControls(this.input, { onPause: () => this.pause(), onEdit: () => this.openTimeline() })
+      ? new TouchControls(this.input, {
+        onPause: () => this.pause(),
+        onEdit: () => this.openTimeline(),
+        onHint: () => this.ui.cycleGuide(),
+      })
       : null;
     this.pausedForPortrait = false;
     if (this.input.touch && typeof window.matchMedia === 'function') {
@@ -337,10 +345,12 @@ export class Game {
     });
     bus.on('room:enter', ({ room }) => {
       ui.setRoom(room);
+      ui.setGuide(room);
       a.setMusicIntensity(room.index / 7);
       if (room.kind === 'puzzle') {
         const code = String(room.cfg.id).padStart(2, '0');
-        ui.toast(`ROOM ${code} // ${room.cfg.name}`, room.cfg.hint);
+        ui.toast(`ROOM ${code} // ${room.cfg.name}`, room.cfg.objective);
+        if (room.cfg.id !== 1) ui.openGuide();
       }
     });
     bus.on('room:reset', ({ reason }) => {

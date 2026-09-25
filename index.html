@@ -44,7 +44,15 @@
 
       <div class="hud-bottom-left">
         <span><b>R</b> RESTART ROOM</span>
+        <span><b>H</b> HINT</span>
         <span><b>ESC</b> PAUSE</span>
+      </div>
+
+      <div id="guide" class="panel hidden">
+        <div class="guide-head" id="guide-head"></div>
+        <p id="guide-rule"></p>
+        <ol id="guide-steps" class="hidden"></ol>
+        <div class="guide-foot" id="guide-foot"></div>
       </div>
 
       <div id="crosshair"><i></i></div>
@@ -61,6 +69,7 @@
       <div id="touch-stick" class="hidden"><i></i></div>
       <div id="touch-buttons">
         <button type="button" data-touch="pause" id="touch-pause">PAUSE</button>
+        <button type="button" data-touch="hint" id="touch-hint">HINT</button>
         <button type="button" data-touch="restart" id="touch-restart">RESTART</button>
         <button type="button" data-touch="edit" id="touch-edit">EDIT</button>
         <button type="button" data-touch="swap" id="touch-swap">SWAP</button>
@@ -129,6 +138,7 @@
               <li><b>Q</b> ECHO SWAP</li>
               <li><b>F</b> ECHO FREEZE</li>
               <li><b>R</b> RESTART ROOM</li>
+              <li><b>H</b> ROOM GUIDE</li>
               <li><b>ESC</b> PAUSE</li>
             </ul>
             <ul class="keys touch-keys">
@@ -139,6 +149,7 @@
               <li><b>USE</b> INTERACT</li>
               <li><b>SWAP / FREEZE</b> ECHO</li>
               <li><b>EDIT</b> TIMELINE</li>
+              <li><b>HINT</b> ROOM GUIDE</li>
               <li><b>PAUSE</b> PAUSE</li>
             </ul>
           </div>
@@ -202,6 +213,12 @@
     <div id="pause" class="screen hidden">
       <div class="panel dialog narrow">
         <h2>PAUSED</h2>
+        <div id="pause-guide" class="pause-guide hidden">
+          <div class="hud-label">ROOM GUIDE</div>
+          <p id="pause-rule"></p>
+          <ol id="pause-steps" class="hidden"></ol>
+          <button class="btn small" data-action="guide-steps">SHOW STEPS</button>
+        </div>
         <nav class="menu-buttons">
           <button class="btn" data-action="resume">RESUME</button>
           <button class="btn" data-action="restart-room">RESTART ROOM</button>

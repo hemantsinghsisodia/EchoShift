@@ -33,6 +33,14 @@ export class UI {
       flash: $('flash'),
       fade: $('fade'),
       debug: $('debug-overlay'),
+      guide: $('guide'),
+      guideHead: $('guide-head'),
+      guideRule: $('guide-rule'),
+      guideSteps: $('guide-steps'),
+      guideFoot: $('guide-foot'),
+      pauseGuide: $('pause-guide'),
+      pauseRule: $('pause-rule'),
+      pauseSteps: $('pause-steps'),
       abilities: $('abilities'),
       ab_swap: $('ab-swap'),
       ab_freeze: $('ab-freeze'),
@@ -45,6 +53,9 @@ export class UI {
     this.toastTimer = null;
     this.bannerTimer = null;
     this.tutorialTimer = null;
+    this.guideTimer = null;
+    this.guideRoom = null;
+    this.guideTier = 0;
 
     document.querySelectorAll('[data-action]').forEach((btn) => {
       btn.addEventListener('click', (e) => {
@@ -58,6 +69,7 @@ export class UI {
   }
 
   onAction(action) {
+    if (action === 'guide-steps') return this.showPauseSteps();
     if (action === 'howto') return this.show('howto');
     if (action === 'settings') {
       this.settingsReturn = this.current === 'pause' ? 'pause' : 'menu';
@@ -88,6 +100,7 @@ export class UI {
   show(id) {
     for (const s of SCREENS) $(s).classList.toggle('hidden', s !== id);
     this.current = id;
+    if (id === 'pause') this.fillPauseGuide();
   }
 
   hideScreens() {
@@ -103,6 +116,90 @@ export class UI {
     if (this.cache[key] === value) return;
     this.cache[key] = value;
     el[prop] = value;
+  }
+
+  setGuide(room) {
+    clearTimeout(this.guideTimer);
+    this.guideRoom = room;
+    this.guideTier = 0;
+    this.renderGuide();
+  }
+
+  guide(tier) {
+    this.guideTier = tier;
+    this.renderGuide();
+  }
+
+  /** closed -> rule -> rule and steps -> closed. Does nothing outside a puzzle room. */
+  cycleGuide() {
+    const room = this.guideRoom;
+    if (!room || room.kind === 'escape' || !room.cfg.steps?.length) return;
+    clearTimeout(this.guideTimer);
+    this.guide((this.guideTier + 1) % 3);
+  }
+
+  /** Tier 1 on room entry. Collapses on its own; a later H press is not on this timer. */
+  openGuide() {
+    if (!this.guideRoom?.cfg.steps?.length) return;
+    this.guide(1);
+    clearTimeout(this.guideTimer);
+    const ms = document.body.classList.contains('touch') ? 6000 : 12000;
+    this.guideTimer = setTimeout(() => this.guide(0), ms);
+  }
+
+  renderGuide() {
+    const room = this.guideRoom;
+    const tier = this.guideTier;
+    if (!room || tier === 0 || !room.cfg.steps?.length) {
+      this.el.guide.classList.add('hidden');
+      return;
+    }
+    const code = String(room.cfg.id).padStart(2, '0');
+    this.el.guideHead.textContent = `ROOM ${code} // ${room.cfg.name}`;
+    this.el.guideRule.textContent = room.cfg.hint;
+    const list = this.el.guideSteps;
+    list.classList.toggle('hidden', tier < 2);
+    list.replaceChildren();
+    if (tier >= 2) {
+      for (const text of room.cfg.steps) {
+        const li = document.createElement('li');
+        li.textContent = text;
+        list.append(li);
+      }
+    }
+    const touch = document.body.classList.contains('touch');
+    this.el.guideFoot.textContent = tier >= 2
+      ? (touch ? 'HINT: CLOSE' : 'H: CLOSE')
+      : (touch ? 'HINT: SHOW STEPS' : 'H: SHOW STEPS');
+    this.el.guide.classList.remove('hidden');
+  }
+
+  fillPauseGuide() {
+    const room = this.guideRoom;
+    const block = this.el.pauseGuide;
+    const steps = room?.cfg.steps;
+    if (!room || room.kind === 'escape' || !steps?.length) {
+      block.classList.add('hidden');
+      return;
+    }
+    this.el.pauseRule.textContent = room.cfg.hint;
+    this.el.pauseSteps.replaceChildren();
+    this.el.pauseSteps.classList.add('hidden');
+    document.querySelector('[data-action="guide-steps"]')?.classList.remove('hidden');
+    block.classList.remove('hidden');
+  }
+
+  showPauseSteps() {
+    const steps = this.guideRoom?.cfg.steps ?? [];
+    const list = this.el.pauseSteps;
+    list.replaceChildren();
+    for (const text of steps) {
+      const li = document.createElement('li');
+      li.textContent = text;
+      list.append(li);
+    }
+    list.classList.remove('hidden');
+    document.querySelector('[data-action="guide-steps"]')?.classList.add('hidden');
   }
 
   setRoom(room) {

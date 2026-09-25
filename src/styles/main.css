@@ -398,6 +398,31 @@ input[type='range']::-moz-range-thumb { width: 12px; height: 12px; background: #
   animation: toastIn 0.6s ease-out;
 }
 
+#guide {
+  position: absolute;
+  left: 50%;
+  top: 27%;
+  transform: translateX(-50%);
+  width: min(520px, 46vw);
+  max-height: 46vh;
+  overflow: auto;
+  padding: 12px 18px 10px;
+  text-align: left;
+  pointer-events: none;
+}
+
+.guide-head { font-size: 12px; letter-spacing: 0.28em; color: var(--blue); margin-bottom: 6px; }
+#guide p { margin: 0; font-size: 14px; line-height: 1.45; color: rgba(220, 232, 255, 0.92); }
+#guide ol { margin: 8px 0 0; padding-left: 18px; font-size: 13px; line-height: 1.4; max-height: 28vh; overflow: auto; }
+#guide li { margin: 0 0 4px; }
+.guide-foot { margin-top: 8px; font-size: 10px; letter-spacing: 0.22em; color: rgba(160, 200, 255, 0.7); }
+
+.pause-guide { margin: 0 0 16px; text-align: left; }
+.pause-guide p { margin: 6px 0 0; font-size: 13px; line-height: 1.45; }
+.pause-guide ol { margin: 8px 0 0; padding-left: 18px; font-size: 13px; line-height: 1.4; }
+.pause-guide .btn { margin-top: 10px; }
+#pause .panel { max-height: 92vh; overflow: auto; }
+
 #toast.out { animation: toastOut 0.6s ease-in forwards; }
 
 .toast-head { font-size: 26px; font-weight: 800; letter-spacing: 0.4em; text-shadow: 0 0 16px var(--blue); }
@@ -582,6 +607,7 @@ body.touch #touch-layer:not(.hidden) { display: block; }
 #touch-swap { right: calc(max(16px, env(safe-area-inset-right)) + 72px); bottom: calc(max(16px, env(safe-area-inset-bottom)) + 72px); }
 #touch-edit { right: calc(max(16px, env(safe-area-inset-right)) + 134px); bottom: calc(max(16px, env(safe-area-inset-bottom)) + 72px); }
 #touch-buttons #touch-pause,
+#touch-buttons #touch-hint,
 #touch-buttons #touch-restart {
   top: max(10px, env(safe-area-inset-top));
   width: auto;
@@ -629,6 +655,18 @@ body.touch .echo-pips i { width: 12px; height: 4px; }
 body.touch .paradox { font-size: 9px; margin-top: 4px; letter-spacing: 0.12em; }
 body.touch .abilities { display: none; }
 body.touch #prompt { font-size: 10px; top: calc(50% + 30px); letter-spacing: 0.16em; }
+body.touch #guide {
+  top: 112px;
+  width: min(440px, 58vw);
+  max-height: 230px;
+  padding: 8px 10px;
+}
+body.touch .guide-head { font-size: 10px; letter-spacing: 0.16em; }
+body.touch #guide p { font-size: 11px; line-height: 1.35; }
+body.touch #guide ol { font-size: 10px; line-height: 1.35; max-height: 130px; }
+body.touch .guide-foot { font-size: 9px; }
+body.touch .pause-guide p,
+body.touch .pause-guide ol { font-size: 12px; }
 body.touch #toast { top: 14%; max-width: 50vw; padding: 8px 16px; }
 body.touch .toast-head { font-size: 14px; letter-spacing: 0.2em; }
 body.touch .toast-body {
@@ -647,5 +685,6 @@ body.touch #tutorial {
   line-height: 1.35;
 }
 body.touch #banner { font-size: 18px; letter-spacing: 0.25em; padding: 8px 0; }
-#touch-pause { left: 50%; transform: translateX(-115%); }
-#touch-restart { left: 50%; transform: translateX(8%); }
+#touch-pause { left: 50%; transform: translateX(-210%); }
+#touch-hint { left: 50%; transform: translateX(-50%); }
+#touch-restart { left: 50%; transform: translateX(110%); }

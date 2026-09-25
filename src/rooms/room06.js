@@ -5,8 +5,14 @@ import { not } from '../puzzle/Logic.js';
 export default {
   id: 6,
   name: 'CROSSFIRE',
-  objective: 'Get past the laser grid and charge the node.',
-  hint: 'Red means danger. Jump over low beams. Echoes pass through lasers, and they repeat every switch you pressed.',
+  objective: 'Draw the Hunter aside, hold the alcove plate, then charge the node.',
+  hint: 'Red beams kill you. Jump the low ones. Echoes pass through lasers, and they repeat every switch you press.',
+  steps: [
+    'Cycle 1: jump the low beam on the east side and stand there, so Echo 1 draws the Hunter away.',
+    'Cycle 2: press the switch, jump the low beam into the alcove, and stand on the plate.',
+    'Leave the alcove the moment cycle 3 starts, before Echo 2 presses the switch and turns the alcove laser back on.',
+    'Walk through the centre laser grid while the plate is held, and charge the node.',
+  ],
   w: 20,
   d: 16,
   h: 5,

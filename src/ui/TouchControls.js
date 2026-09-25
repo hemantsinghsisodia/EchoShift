@@ -5,10 +5,11 @@ const TAP_PX = 14;
  * On-screen stick, look drag and action buttons. Writes into Input; the simulation is unchanged.
  */
 export class TouchControls {
-  constructor(input, { onPause, onEdit } = {}) {
+  constructor(input, { onPause, onEdit, onHint } = {}) {
     this.input = input;
     this.onPause = onPause;
     this.onEdit = onEdit;
+    this.onHint = onHint;
     this.root = document.getElementById('touch-layer');
     this.moveZone = document.getElementById('touch-move');
     this.lookZone = document.getElementById('touch-look');
@@ -52,6 +53,7 @@ export class TouchControls {
     document.getElementById('touch-swap').classList.toggle('hidden', !ab.allowed('swap'));
     document.getElementById('touch-freeze').classList.toggle('hidden', !ab.allowed('freeze'));
     document.getElementById('touch-edit').classList.toggle('hidden', !sim.room?.cfg.edits);
+    document.getElementById('touch-hint').classList.toggle('hidden', sim.room?.kind !== 'puzzle');
     document.getElementById('touch-sprint').classList.toggle('on', this.input.sprintHeld);
   }
 
@@ -130,6 +132,10 @@ export class TouchControls {
     }
     if (action === 'edit') {
       this.onEdit?.();
+      return;
+    }
+    if (action === 'hint') {
+      this.onHint?.();
       return;
     }
     this.input.press(action);

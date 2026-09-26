@@ -31,18 +31,13 @@ export const SOLUTIONS = [
     { interact: 'core' },
     { exit: true },
   ],
-  // Room 3: record walking up to the grid; swap from 3 m further along so Echo 1's future
-  // carries it through the laser, then swap into it.
+  // Room 3: hold the plate for a cycle; Echo 1 holds it and the laser grid switches off.
   [
-    { wait: 3 },
-    { goto: [0, -1.6], sprint: false },
+    { goto: [5, 1.5] },
     { waitRoom: 15.05 },
-    { goto: [0, 0.8], sprint: false },
-    { waitEcho: 1, near: [0, 3.8], tol: 0.25 },
-    { swap: 1 },
-    { waitEcho: 1, near: [0, -4.6], tol: 0.3 },
-    { until: (sim) => sim.abilities.cooldown('swap') === 0 },
-    { swap: 1 },
+    { goto: [0, -1.6] },
+    { until: laserOff('grid') },
+    { goto: [0, -4.6] },
     { goto: [-1.8, -5.0] },
     { interact: 'core' },
     { exit: true },

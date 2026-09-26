@@ -1,16 +1,16 @@
 import { wallX } from './helpers.js';
+import { not } from '../puzzle/Logic.js';
 
-// Teaches Echo Swap: push an Echo's future through a laser it cannot be hurt by, then swap into it.
+// The plate switches the laser grid off. Record yourself on it; the Echo holds it while you pass.
 export default {
   id: 3,
   name: 'THRESHOLD',
-  objective: 'Send your Echo through the laser grid, then swap into it.',
-  hint: 'Lasers cannot hurt Echoes. When you swap (Q), you trade places, and the rest of the Echo\'s path shifts by the same distance.',
+  objective: 'Switch off the laser grid and charge the node.',
+  hint: 'Lasers kill you but cannot hurt Echoes. The grid stays off only while someone stands on the plate.',
   steps: [
-    'Cycle 1: walk straight toward the laser grid and stop just in front of it. Wait for the cycle to end.',
-    'Cycle 2: Echo 1 repeats that walk from the entrance. Stand a few steps ahead of it, between it and the grid.',
-    'Aim at the Echo and press Q. Its walk now ends past the grid, so it walks through the laser.',
-    'When it is fully past the beam and Q has recharged, press Q again. A swap is blocked while the Echo stands in the beam.',
+    'Stand on the glowing plate until the cycle ends.',
+    'Your Echo walks back to the plate and holds it. The laser grid switches off.',
+    'Walk through the gap in the wall.',
     'Charge the node.',
   ],
   w: 20,
@@ -23,7 +23,8 @@ export default {
   accent: 'blue',
   walls: [...wallX(-3, -10, 10, [[0, 2.4]])],
   objects: [
-    { type: 'laser', id: 'grid', min: [-1.2, 0, -3.05], max: [1.2, 3.2, -2.95] },
+    { type: 'plate', id: 'pA', pos: [5, 0, 1.5] },
+    { type: 'laser', id: 'grid', min: [-1.2, 0, -3.05], max: [1.2, 3.2, -2.95], activeWhen: not('pA') },
     { type: 'node', id: 'core', pos: [-3, 0, -5.5] },
   ],
 };

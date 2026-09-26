@@ -62,7 +62,7 @@ describe('rooms cannot be solved alone before the first echo', () => {
 describe('new abilities are required', () => {
   const withoutStep = (roomIndex, drop) => SOLUTIONS[roomIndex].filter((s, i) => !drop(s, i));
 
-  it('room 3: walking into the laser grid kills; without Swap the chamber is unreachable', () => {
+  it('room 3: walking into the laser grid kills; without an Echo on the plate the grid stays on', () => {
     const sim = new Simulation();
     sim.roomManager.begin(2);
     let death = null;
@@ -73,8 +73,12 @@ describe('new abilities are required', () => {
 
     const sim2 = new Simulation();
     sim2.roomManager.begin(2);
-    const res = runSteps(sim2, withoutStep(2, (s) => s.swap !== undefined), 60 * 80);
+    // Time out before the cycle ends. Otherwise the Echo's walk across the plate
+    // switches the grid off for a moment and the player slips through.
+    const steps = withoutStep(2, (s) => s.waitRoom !== undefined).map((s) => (s.until ? { ...s, timeout: 2 } : s));
+    const res = runSteps(sim2, steps, 60 * 40);
     expect(sim2.rooms[2].complete).toBe(false);
+    expect(sim2.room.byId.grid.active).toBe(true);
     expect(res.pilot.error).not.toBeNull();
   });
 

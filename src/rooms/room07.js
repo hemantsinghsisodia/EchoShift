@@ -23,6 +23,7 @@ export default {
   abilities: ['swap', 'freeze'],
   edits: { delete: 1, restart: 1 },
   accent: 'blue',
+  decor: { theme: 'data' },
   walls: [
     ...wallZ(9, -7, -4),
     ...wallX(-4, 9, 12, [[10.5, 2.2]]),

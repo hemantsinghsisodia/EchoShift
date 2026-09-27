@@ -21,6 +21,7 @@ export default {
   maxEchoes: 2,
   abilities: ['swap'],
   accent: 'blue',
+  decor: { theme: 'security' },
   walls: [...wallX(-3, -10, 10, [[0, 2.4]])],
   objects: [
     { type: 'plate', id: 'pA', pos: [5, 0, 1.5] },

@@ -11,5 +11,6 @@ export default {
   entranceX: 0,
   maxEchoes: 0,
   accent: 'white',
+  decor: { theme: 'lab' },
   objects: [],
 };

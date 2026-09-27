@@ -19,6 +19,7 @@ export default {
   exitX: 0,
   maxEchoes: 2,
   accent: 'blue',
+  decor: { theme: 'lab' },
   walls: [...wallX(-1, -7, 7, [[0, 2.4]])],
   objects: [
     { type: 'plate', id: 'pA', pos: [-4.5, 0, 2.5] },

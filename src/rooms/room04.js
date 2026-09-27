@@ -20,6 +20,7 @@ export default {
   maxEchoes: 1,
   abilities: ['swap', 'freeze'],
   accent: 'purple',
+  decor: { theme: 'security' },
   walls: [
     ...wallX(-2, -9, 9, [[6, 2.4]]),
     ...wallX(-5, -9, 9, [[6, 2.4]]),

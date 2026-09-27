@@ -20,6 +20,7 @@ export default {
   exitX: 0,
   maxEchoes: 1,
   accent: 'purple',
+  decor: { theme: 'lab' },
   blocks: [block(-8, 0, 2, -5, 1.8, 7), block(-4.9, 0, 4, -3.9, 0.9, 5)],
   walls: [...wallX(-3, -8, 8, [[0, 2.4]])],
   objects: [

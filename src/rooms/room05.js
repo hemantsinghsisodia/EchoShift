@@ -22,6 +22,7 @@ export default {
   maxEchoes: 2,
   abilities: ['swap', 'freeze'],
   accent: 'blue',
+  decor: { theme: 'industrial' },
   floors: [
     [-10, 3, 10, 12],
     [-10, -12, 10, -6],

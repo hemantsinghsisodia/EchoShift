@@ -28,6 +28,7 @@ export default {
   exitDelay: 3.5,
   final: true,
   accent: 'purple',
+  decor: { theme: 'reactor' },
   floors: [
     [-17, -14, 17, -3],
     [-17, 3, 17, 14],

@@ -10,10 +10,12 @@ import { TimelineEditor } from '../ui/TimelineEditor.js';
 import { Tutorial } from '../ui/Tutorial.js';
 import { loadSettings, saveSettings } from '../ui/Settings.js';
 import { TICK_RATE } from './config.js';
-import { isPortrait } from './device.js';
+import { isPortrait, isTouchDevice } from './device.js';
 import { playerDeathNotice } from './playerDeathNotice.js';
 import { TouchControls } from '../ui/TouchControls.js';
 import { loadEchoModel } from '../render/EchoModel.js';
+import { loadLabSurfaces } from '../render/LabSurfaces.js';
+import { loadLabKit } from '../render/LabDecor.js';
 
 const LOCK_FALLBACK_MS = 450;
 
@@ -29,6 +31,13 @@ export class Game {
     this.sim = new Simulation({ bus: this.bus });
     this.renderer = new Renderer(container);
     this.view = new SceneView(this.sim, this.renderer);
+    const quality = isTouchDevice() ? 'low' : 'high';
+    loadLabSurfaces(quality).then((pack) => {
+      if (pack) this.view.applySurfaces(pack);
+    });
+    loadLabKit().then((gltf) => {
+      if (gltf) this.view.setDecor(gltf, quality);
+    });
     this.audio = new AudioManager(this.settings);
     this.input = new Input(this.renderer.canvas, this.settings);
     this.ui = new UI(this.settings, {

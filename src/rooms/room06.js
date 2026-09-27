@@ -30,6 +30,7 @@ export default {
     ],
   },
   accent: 'purple',
+  decor: { theme: 'data' },
   blocks: [block(2, 0, 1, 6, 1.1, 2), block(2, 0, -2, 6, 1.1, -1)],
   walls: [...wallX(0, -10, -6), ...wallX(-5, -10, 10, [[0, 2.4]])],
   objects: [

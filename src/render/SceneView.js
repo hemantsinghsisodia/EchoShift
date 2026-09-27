@@ -9,6 +9,7 @@ import { CameraShake } from './CameraShake.js';
 import { EndingFX } from './EndingFX.js';
 import { createObjectView, createWireView, createNodeConeMaterials } from './ObjectViews.js';
 import { EchoView } from '../echo/EchoView.js';
+import { buildDecor } from './LabDecor.js';
 import { HunterView } from './HunterView.js';
 import { FLAG_WALKING } from '../player/Player.js';
 
@@ -68,6 +69,7 @@ export class SceneView {
       coneMats: { ...this.lab.coneMats, ...nodeCones },
     });
     this.echoViews = new Map();
+    this.decor = null;
     this.bobPhase = 0;
     this.bobAmount = 0;
     this.landDip = 0;
@@ -233,7 +235,30 @@ export class SceneView {
     const ending = this.sim.state === 'ending' || this.sim.state === 'escaped';
     this.endingFx.update(dt, time, ending ? this.sim.endingTick / TICK_RATE : null);
     this.lab.pitMat.uniforms.uTime.value = time;
+    this.decor?.update(time);
     this.renderer.render();
+  }
+
+  applySurfaces(pack) {
+    if (!pack) return;
+    const bind = [
+      [this.mats.floor, pack.floor],
+      [this.mats.wall, pack.wall],
+      [this.mats.ceiling, pack.ceiling],
+      [this.mats.block, pack.wall],
+    ];
+    for (const [mat, set] of bind) {
+      mat.userData.surfaceMaps = set;
+      mat.needsUpdate = true;
+    }
+  }
+
+  setDecor(gltf, quality) {
+    if (this.decor || !gltf) return;
+    const decor = buildDecor(gltf, this.sim.rooms, quality);
+    if (!decor) return;
+    this.decor = decor;
+    this.scene.add(decor.group);
   }
 
   setTimelinePreview(echo, trackTick) {

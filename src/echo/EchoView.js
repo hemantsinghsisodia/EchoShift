@@ -1,7 +1,8 @@
 import * as THREE from 'three';
 import { createEchoMaterial, createOutlineMaterial } from './EchoMaterial.js';
 import { FLAG_WALKING, FLAG_SPRINTING, FLAG_JUMPING } from '../player/Player.js';
-import { cloneEchoModel, echoModelReady } from '../render/EchoModel.js';
+import { cloneEchoModel, echoCircuitMap, echoModelReady } from '../render/EchoModel.js';
+import { EchoFx } from './EchoFx.js';
 
 const FADE = 0.2;
 const WALK_GROUND_SPEED = 1.55;
@@ -17,9 +18,11 @@ const PITCH_AXIS = new THREE.Vector3(1, 0, 0);
  * procedural capsule body. Interpolates the echo's simulated position and rotation.
  */
 export class EchoView {
-  constructor(echo, geos) {
+  constructor(echo, geos, opts = {}) {
     this.echo = echo;
     this.geos = geos;
+    this.quality = opts.quality || 'high';
+    this.preview = !!opts.preview;
     const hue = ((echo.serial - 1) % 4) * 0.045;
     this.mat = createEchoMaterial(hue);
     this.outline = createOutlineMaterial(hue);
@@ -53,6 +56,7 @@ export class EchoView {
     this.clipName = null;
     this.previewSample = null;
 
+    this.fx = new EchoFx(this.group, hue, this.quality, this.preview);
     if (!this.buildRig()) this.buildProcedural();
 
     this.ringMat = new THREE.MeshBasicMaterial({
@@ -111,7 +115,12 @@ export class EchoView {
     rig.traverse((node) => {
       if (node.isSkinnedMesh) meshes.push(node);
     });
+    const map = echoCircuitMap();
+    if (map) this.mat.uniforms.uCircuits.value = map;
+    let hasSuitColor = false;
     for (const mesh of meshes) {
+      rgbColor(mesh.geometry);
+      if (mesh.geometry.getAttribute('color')) hasSuitColor = true;
       mesh.material = this.mat;
       mesh.frustumCulled = false;
       mesh.castShadow = false;
@@ -124,22 +133,25 @@ export class EchoView {
       shell.frustumCulled = false;
       mesh.parent.add(shell);
     }
+    this.fx.attachRig(rig);
     this.headBone = rig.getObjectByName('Head') || rig.getObjectByName('Neck');
     if (this.headBone) {
       rig.updateMatrixWorld(true);
-      const worldScale = this.headBone.getWorldScale(new THREE.Vector3()).x || 1;
-      this.rigVisorMat = new THREE.MeshBasicMaterial({
-        color: new THREE.Color().setHSL(0.8 + this.hue, 1, 0.7).multiplyScalar(1.2),
-        transparent: true,
-        blending: THREE.AdditiveBlending,
-        depthWrite: false,
-      });
-      const visor = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), this.rigVisorMat);
-      visor.scale.set(0.16 / worldScale, 0.035 / worldScale, 0.01 / worldScale);
-      visor.position.set(0, 0.08 / worldScale, 0.11 / worldScale);
-      this.headBone.add(visor);
-      this.visor = visor;
-      this.visorOwnsGeometry = true;
+      if (!hasSuitColor) {
+        const worldScale = this.headBone.getWorldScale(new THREE.Vector3()).x || 1;
+        this.rigVisorMat = new THREE.MeshBasicMaterial({
+          color: new THREE.Color().setHSL(0.8 + this.hue, 1, 0.7).multiplyScalar(1.2),
+          transparent: true,
+          blending: THREE.AdditiveBlending,
+          depthWrite: false,
+        });
+        const visor = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), this.rigVisorMat);
+        visor.scale.set(0.16 / worldScale, 0.035 / worldScale, 0.01 / worldScale);
+        visor.position.set(0, 0.08 / worldScale, 0.11 / worldScale);
+        this.headBone.add(visor);
+        this.visor = visor;
+        this.visorOwnsGeometry = true;
+      }
       this.body.updateWorldMatrix(true, true);
       this.headRestQuat = this.headBone.quaternion.clone();
       const headW = new THREE.Quaternion();
@@ -153,6 +165,9 @@ export class EchoView {
 
   buildProcedural() {
     const geos = this.geos;
+    ensureColor(geos.capsule);
+    ensureColor(geos.sphere);
+    ensureColor(geos.box);
     const torso = new THREE.Mesh(geos.capsule, this.mat);
     torso.scale.set(1, 0.72, 0.8);
     torso.position.y = 0.95;
@@ -375,6 +390,19 @@ export class EchoView {
     this.ring.scale.setScalar(0.9 + 0.1 * Math.sin(time * 3));
     this.badge.material.opacity = dissolve;
     if (camera) this.badge.quaternion.copy(camera.quaternion);
+    const map = echoCircuitMap();
+    if (map && this.mat.uniforms.uCircuits.value !== map) this.mat.uniforms.uCircuits.value = map;
+    this.fx.update({
+      dt,
+      speed,
+      swapped,
+      frozen,
+      dissolve,
+      x,
+      y,
+      z,
+      time,
+    });
   }
 
   dispose() {
@@ -392,7 +420,27 @@ export class EchoView {
     this.badge.material.map.dispose();
     this.badge.material.dispose();
     this.badge.geometry.dispose();
+    this.fx.dispose();
   }
+}
+
+function ensureColor(geometry) {
+  if (geometry.getAttribute('color')) return;
+  const count = geometry.getAttribute('position').count;
+  geometry.setAttribute('color', new THREE.BufferAttribute(new Float32Array(count * 3), 3));
+}
+
+/** glTF stores the suit mask as RGBA. The hologram shader reads a vec3. */
+function rgbColor(geometry) {
+  const color = geometry.getAttribute('color');
+  if (!color || color.itemSize === 3) return;
+  const arr = new Float32Array(color.count * 3);
+  for (let i = 0; i < color.count; i++) {
+    arr[i * 3] = color.getX(i);
+    arr[i * 3 + 1] = color.getY(i);
+    arr[i * 3 + 2] = color.getZ(i);
+  }
+  geometry.setAttribute('color', new THREE.BufferAttribute(arr, 3));
 }
 
 function clipForMotion(echo, speed, current) {

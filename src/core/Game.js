@@ -30,8 +30,8 @@ export class Game {
     this.bus = new EventBus();
     this.sim = new Simulation({ bus: this.bus });
     this.renderer = new Renderer(container);
-    this.view = new SceneView(this.sim, this.renderer);
     const quality = isTouchDevice() ? 'low' : 'high';
+    this.view = new SceneView(this.sim, this.renderer, quality);
     loadLabSurfaces(quality).then((pack) => {
       if (pack) this.view.applySurfaces(pack);
     });

@@ -6,6 +6,7 @@ const TARGET_HEIGHT = 1.75;
 
 let template = null;
 let clips = null;
+let circuits = null;
 let pending = null;
 
 /**
@@ -17,27 +18,48 @@ export function loadEchoModel() {
   if (pending) return pending;
   pending = new Promise((resolve) => {
     const loader = new GLTFLoader();
-    loader.load(
-      import.meta.env.BASE_URL + 'models/echo.glb',
-      (gltf) => {
-        template = normalize(gltf.scene);
-        clips = {
-          idle: clipNamed(gltf.animations, 'idle'),
-          walk: clipNamed(gltf.animations, 'walk'),
-          run: clipNamed(gltf.animations, 'run'),
-          jump: clipNamed(gltf.animations, 'jump'),
-        };
-        resolve(true);
-      },
-      undefined,
-      () => resolve(false),
-    );
+    const model = new Promise((done) => {
+      loader.load(
+        import.meta.env.BASE_URL + 'models/echo.glb',
+        (gltf) => {
+          template = normalize(gltf.scene);
+          clips = {
+            idle: clipNamed(gltf.animations, 'idle'),
+            walk: clipNamed(gltf.animations, 'walk'),
+            run: clipNamed(gltf.animations, 'run'),
+            jump: clipNamed(gltf.animations, 'jump'),
+          };
+          done(true);
+        },
+        undefined,
+        () => done(false),
+      );
+    });
+    const mask = new Promise((done) => {
+      new THREE.TextureLoader().load(
+        import.meta.env.BASE_URL + 'textures/echo_circuits.webp',
+        (tex) => {
+          tex.colorSpace = THREE.NoColorSpace;
+          tex.flipY = true;
+          circuits = tex;
+          done();
+        },
+        undefined,
+        () => done(),
+      );
+    });
+    Promise.all([model, mask]).then(([ok]) => resolve(ok));
   });
   return pending;
 }
 
 export function echoModelReady() {
   return template != null && clips?.idle != null;
+}
+
+/** Circuit-line mask baked with the suit. Null until the texture load finishes. */
+export function echoCircuitMap() {
+  return circuits;
 }
 
 /** A fresh rig. SkeletonUtils.clone keeps skinning intact; plain clone() does not. */

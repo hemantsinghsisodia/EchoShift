@@ -18,9 +18,10 @@ import { FLAG_WALKING } from '../player/Player.js';
  * drives the first-person camera (interpolated, head-bob, shake) and reacts to sim events with FX.
  */
 export class SceneView {
-  constructor(sim, renderer) {
+  constructor(sim, renderer, quality = 'high') {
     this.sim = sim;
     this.renderer = renderer;
+    this.quality = quality;
     this.scene = renderer.scene;
     this.camera = renderer.camera;
     this.mats = createMaterials();
@@ -179,7 +180,7 @@ export class SceneView {
     const live = this.sim.echoes.echoes;
     for (const echo of live) {
       if (!this.echoViews.has(echo)) {
-        const v = new EchoView(echo, this.geos);
+        const v = new EchoView(echo, this.geos, { quality: this.quality });
         this.echoViews.set(echo, v);
         this.scene.add(v.group);
       }
@@ -263,7 +264,7 @@ export class SceneView {
 
   setTimelinePreview(echo, trackTick) {
     if (!this.timelineGhost) {
-      this.timelineGhost = new EchoView(echo, this.geos);
+      this.timelineGhost = new EchoView(echo, this.geos, { quality: this.quality, preview: true });
       this.timelineGhost.group.traverse((node) => {
         if (node.material?.uniforms?.uIntensity) node.material.uniforms.uIntensity.value = 0.35;
       });

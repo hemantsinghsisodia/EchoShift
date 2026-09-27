@@ -1,8 +1,16 @@
 import * as THREE from 'three';
 
+function blankCircuits() {
+  const tex = new THREE.DataTexture(new Uint8Array([0, 0, 0, 255]), 1, 1);
+  tex.colorSpace = THREE.NoColorSpace;
+  tex.needsUpdate = true;
+  return tex;
+}
+
 /**
  * Holographic echo shader: fresnel rim glow, world-space scanlines, vertex jitter with
  * occasional horizontal slice glitches, and a noise dissolve for spawning/collapsing.
+ * Vertex colour, when the chrono-suit provides it, is armour (R), trim (G) and visor (B).
  */
 export function createEchoMaterial(hue = 0) {
   const base = new THREE.Color().setHSL(0.53 + hue, 0.95, 0.6);
@@ -19,6 +27,7 @@ export function createEchoMaterial(hue = 0) {
       uFrozen: { value: 0 },
       uFlash: { value: 0 },
       uCorrupt: { value: 0 },
+      uCircuits: { value: blankCircuits() },
     },
     vertexShader: /* glsl */ `
       #include <skinning_pars_vertex>
@@ -27,9 +36,12 @@ export function createEchoMaterial(hue = 0) {
       uniform float uGlitch;
       uniform float uFrozen;
       uniform float uCorrupt;
+      attribute vec3 color;
       varying vec3 vN;
       varying vec3 vV;
       varying vec3 vW;
+      varying vec3 vCol;
+      varying vec2 vUv;
       float hash(float n) { return fract(sin(n) * 43758.5453); }
       void main() {
         vec3 objectNormal = normal;
@@ -47,6 +59,8 @@ export function createEchoMaterial(hue = 0) {
         w.x += (hash(slice * 1.7 + floor(uTime * 20.0)) - 0.5) * 0.14 * g * live * (1.0 + uCorrupt * 5.0);
         w.xyz += wn * sin(uTime * 7.0 + w.y * 12.0 + uSeed) * 0.006 * live;
         vW = w.xyz;
+        vCol = color;
+        vUv = uv;
         vec4 mv = viewMatrix * w;
         vN = normalize(mat3(viewMatrix) * wn);
         vV = normalize(-mv.xyz);
@@ -63,9 +77,12 @@ export function createEchoMaterial(hue = 0) {
       uniform float uFrozen;
       uniform float uFlash;
       uniform float uCorrupt;
+      uniform sampler2D uCircuits;
       varying vec3 vN;
       varying vec3 vV;
       varying vec3 vW;
+      varying vec3 vCol;
+      varying vec2 vUv;
       float hash3(vec3 p) { return fract(sin(dot(p, vec3(12.9898, 78.233, 37.719))) * 43758.5453); }
       float noise(vec3 p) {
         vec3 i = floor(p); vec3 f = fract(p); f = f * f * (3.0 - 2.0 * f);
@@ -82,6 +99,16 @@ export function createEchoMaterial(hue = 0) {
         float band = smoothstep(0.0, 0.05, fract(vW.y * 0.8 - uTime * 0.35)) * 0.25;
         float flicker = 0.9 + 0.1 * sin(uTime * 31.0 + uSeed);
         vec3 col = uColor * (0.18 + 0.35 * scan + band) + uRim * fres * 2.4 + vec3(1.0) * edge * 3.0;
+        float plate = clamp(vCol.r, 0.0, 1.0);
+        float trim = clamp(vCol.g, 0.0, 1.0);
+        float core = clamp(vCol.b, 0.0, 1.0);
+        float circuit = texture2D(uCircuits, vUv).r;
+        float pulse = smoothstep(0.28, 0.0, abs(fract(vW.y * 0.55 - uTime * 0.45) - 0.5));
+        float energy = (trim * 0.8 + circuit * 0.22) * pulse * uDissolve;
+        col += uColor * plate * (0.08 + 0.12 * scan) * uDissolve;
+        col += uRim * fres * plate * 0.45 * uDissolve;
+        col += vec3(0.35, 0.95, 1.0) * energy * 0.85;
+        col += vec3(0.75, 0.95, 1.0) * core * 0.55 * uDissolve;
         vec3 facets = abs(fract(vW * 3.5) - 0.5);
         float crack = smoothstep(0.46, 0.5, max(max(facets.x, facets.y), facets.z));
         vec3 ice = vec3(0.75, 0.95, 1.0) * (0.35 + fres * 2.2 + crack * 1.6);
@@ -91,6 +118,7 @@ export function createEchoMaterial(hue = 0) {
         col *= 1.0 + uCorrupt * (0.4 + 0.6 * sin(uTime * 80.0 + vW.y * 20.0));
         flicker = mix(flicker, 1.0, uFrozen);
         float a = (0.22 + 0.25 * scan + fres * 0.9 + edge + uFlash) * flicker;
+        a += (plate * 0.1 + core * 0.18 + trim * 0.12) * uDissolve;
         gl_FragColor = vec4(col * uIntensity * a, a);
       }
     `,
